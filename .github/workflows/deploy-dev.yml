@@ -1,15 +1,15 @@
-name: Deploy to GitHub Pages (prod)
+name: Deploy to GitHub Pages (dev preview)
 
 on:
   push:
-    branches: [main]
+    branches: [dev]
   workflow_dispatch:
 
 permissions:
   contents: write
 
 concurrency:
-  group: deploy-prod
+  group: deploy-dev
   cancel-in-progress: true
 
 jobs:
@@ -27,11 +27,12 @@ jobs:
 
       - run: npm run build
         env:
-          DEPLOY_BASE: /lucky_numbers/
+          DEPLOY_BASE: /lucky_numbers/dev/
 
       - uses: peaceiris/actions-gh-pages@v4
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           publish_dir: ./dist
+          destination_dir: dev
           keep_files: true
-          commit_message: "deploy: prod from ${{ github.sha }}"
+          commit_message: "deploy: dev preview from ${{ github.sha }}"
