@@ -146,7 +146,7 @@ export default function App() {
       </main>
 
       <footer className="app-footer">
-        <span>Stage 1 · random draw</span>
+        <span>{effectivePersonalMode ? 'Stage 2 · personal mode' : 'Stage 1 · random draw'}</span>
         <span className="footer-soon">Pattern mode coming soon</span>
       </footer>
 

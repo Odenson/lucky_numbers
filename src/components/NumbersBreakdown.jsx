@@ -1,10 +1,6 @@
 import Ball from './Ball'
 import { buildPersonalBreakdown } from '../lib/personal'
-
-const MONTH_NAMES = [
-  'January','February','March','April','May','June',
-  'July','August','September','October','November','December',
-]
+import { MONTH_NAMES } from '../lib/constants'
 
 function formatDob({ day, month, year }) {
   return `${day} ${MONTH_NAMES[month - 1]} ${year}`

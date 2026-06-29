@@ -8,10 +8,8 @@
 //   · Any remaining slots are filled with a cryptographically-strong
 //     random draw, keeping each generation fresh.
 
-const MONTH_NAMES = [
-  'January','February','March','April','May','June',
-  'July','August','September','October','November','December',
-]
+import { randomInt, shuffle } from './random.js'
+import { MONTH_NAMES } from './constants.js'
 
 // ─── Pythagorean letter-to-number table ──────────────────────────────────────
 
@@ -89,30 +87,6 @@ export function buildPersonalPool({ day, month, year, name }) {
 
   const seen = new Set()
   return ordered.filter((n) => !seen.has(n) && seen.add(n))
-}
-
-// ─── Unbiased random integer (mirrors generator.js) ──────────────────────────
-
-function randomInt(min, max) {
-  const range = max - min + 1
-  const maxUnbiased = Math.floor(0xffffffff / range) * range
-  const buf = new Uint32Array(1)
-  let v
-  do {
-    crypto.getRandomValues(buf)
-    v = buf[0]
-  } while (v >= maxUnbiased)
-  return min + (v % range)
-}
-
-// Fisher-Yates shuffle using the crypto randomInt above.
-function shuffle(arr) {
-  const a = [...arr]
-  for (let i = a.length - 1; i > 0; i--) {
-    const j = randomInt(0, i)
-    ;[a[i], a[j]] = [a[j], a[i]]
-  }
-  return a
 }
 
 // ─── Line generation ──────────────────────────────────────────────────────────
@@ -193,7 +167,9 @@ export function generatePersonalLines({ count, min, max, profile }, lineCount = 
     // from line 1 in its personal number complement.
     let personalSeed = null
     if (i > 0 && inRange.length > 0) {
-      const subsetCount = randomInt(0, inRange.length - 1)
+      // Always include at least 1 personal number so lines 2+ retain personal
+      // influence. A count of 0 would produce a purely random line.
+      const subsetCount = inRange.length <= 1 ? inRange.length : randomInt(1, inRange.length - 1)
       personalSeed = shuffle(inRange).slice(0, subsetCount)
     }
     return {
