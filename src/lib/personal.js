@@ -100,21 +100,37 @@ function randomInt(min, max) {
   return min + (v % range)
 }
 
+// Fisher-Yates shuffle using the crypto randomInt above.
+function shuffle(arr) {
+  const a = [...arr]
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = randomInt(0, i)
+    ;[a[i], a[j]] = [a[j], a[i]]
+  }
+  return a
+}
+
 // ─── Line generation ──────────────────────────────────────────────────────────
 
 /**
  * Generate one personal line.
  *
- * Personal numbers that fall within [min, max] are always included first
- * (up to `count`, in significance order). Any remaining slots are filled
- * with unbiased crypto-random picks so each generation stays fresh.
+ * `personalSeed` controls which personal numbers are included:
+ *   null (default) — use the full in-range pool in priority order (line 1).
+ *   number[]       — explicit subset to seed with (used for lines 2+).
+ *
+ * Personal numbers are placed first (up to `count`). Any remaining slots are
+ * filled with unbiased crypto-random picks so each generation stays fresh.
  */
-export function generatePersonalLine({ count, min, max, profile, sorted = true }) {
+export function generatePersonalLine({ count, min, max, profile, sorted = true, personalSeed = null }) {
   const pool    = buildPersonalPool(profile)
   const inRange = pool.filter((n) => n >= min && n <= max)
 
+  // Use the explicit seed when provided, otherwise the full priority-ordered pool.
+  const seedNumbers = personalSeed !== null ? personalSeed : inRange
+
   // Seed with personal numbers (capped at count).
-  const chosen = new Set(inRange.slice(0, count))
+  const chosen = new Set(seedNumbers.slice(0, count))
 
   // Fill any remaining slots with random draws from the rest of the range.
   if (chosen.size < count) {
@@ -153,10 +169,31 @@ export function getPersonalNumberType(n, profile) {
 
 /**
  * Generate several independent personal lines at once.
+ *
+ * Line 1 always receives the full in-range personal pool (priority order).
+ * Lines 2+ each receive a randomly-sized, randomly-shuffled subset of those
+ * same personal numbers (strictly fewer than the full set), with the
+ * remaining slots filled by a fresh crypto-random draw. This ensures every
+ * subsequent line is varied while still carrying some personal influence.
  */
 export function generatePersonalLines({ count, min, max, profile }, lineCount = 1) {
-  return Array.from({ length: lineCount }, () => ({
-    id: crypto.randomUUID(),
-    numbers: generatePersonalLine({ count, min, max, profile }),
-  }))
+  const pool    = buildPersonalPool(profile)
+  const inRange = pool.filter((n) => n >= min && n <= max)
+
+  return Array.from({ length: lineCount }, (_, i) => {
+    // Line 1 (i === 0): full priority-ordered personal seed — null triggers
+    // the default path inside generatePersonalLine.
+    // Lines 2+ (i > 0): a random subset of the in-range personal numbers,
+    // with a count of 0 to (inRange.length − 1) so the line always differs
+    // from line 1 in its personal number complement.
+    let personalSeed = null
+    if (i > 0 && inRange.length > 0) {
+      const subsetCount = randomInt(0, inRange.length - 1)
+      personalSeed = shuffle(inRange).slice(0, subsetCount)
+    }
+    return {
+      id: crypto.randomUUID(),
+      numbers: generatePersonalLine({ count, min, max, profile, personalSeed }),
+    }
+  })
 }

@@ -197,6 +197,52 @@ describe('generatePersonalLine', () => {
   })
 })
 
+// ─── generatePersonalLine — personalSeed override ────────────────────────────
+
+describe('generatePersonalLine — personalSeed override', () => {
+  const opts = { count: 7, min: 1, max: 42, profile: PROFILE }
+
+  it('empty personalSeed produces a fully random line (valid count, in range, no dups)', () => {
+    const nums = generatePersonalLine({ ...opts, personalSeed: [] })
+    expect(nums).toHaveLength(7)
+    expect(new Set(nums).size).toBe(7)
+    for (const n of nums) {
+      expect(n).toBeGreaterThanOrEqual(1)
+      expect(n).toBeLessThanOrEqual(42)
+    }
+  })
+
+  it('numbers in personalSeed are included in the output', () => {
+    const nums = generatePersonalLine({ ...opts, personalSeed: [7, 11] })
+    expect(nums).toContain(7)
+    expect(nums).toContain(11)
+  })
+
+  it('personalSeed is capped at count (extra seed numbers are dropped)', () => {
+    // Seed 4 numbers but count is 3 — only first 3 of the seed should appear.
+    const nums = generatePersonalLine({ count: 3, min: 1, max: 42, profile: PROFILE, personalSeed: [7, 11, 14, 8] })
+    expect(nums).toHaveLength(3)
+    // First 3 seed values must all be present.
+    expect(nums).toContain(7)
+    expect(nums).toContain(11)
+    expect(nums).toContain(14)
+  })
+
+  it('personalSeed=null (default) is identical to omitting the parameter', () => {
+    // Both calls should produce lines that always include all in-range personal numbers.
+    // Run 5 times to rule out a lucky pass.
+    for (let i = 0; i < 5; i++) {
+      const a = generatePersonalLine({ ...opts })
+      const b = generatePersonalLine({ ...opts, personalSeed: null })
+      // Both must contain all in-range personal numbers from PROFILE.
+      for (const n of [7, 11, 14, 8, 5, 3]) {
+        expect(a).toContain(n)
+        expect(b).toContain(n)
+      }
+    }
+  })
+})
+
 // ─── generatePersonalLines ────────────────────────────────────────────────────
 
 describe('generatePersonalLines', () => {
@@ -219,5 +265,63 @@ describe('generatePersonalLines', () => {
       ids.add(line.id)
     }
     expect(ids.size).toBe(5)
+  })
+
+  // ─ Multi-line seeding behaviour ───────────────────────────────────────────
+
+  it('line 1 always contains all in-range personal numbers', () => {
+    // PROFILE in-range pool: [7, 11, 14, 8, 5, 3] — all fall within [1, 49].
+    // count=6 matches pool size exactly, so all 6 must be present.
+    for (let i = 0; i < 5; i++) {
+      const [line1] = generatePersonalLines(opts, 3)
+      for (const n of [7, 11, 14, 8, 5, 3]) {
+        expect(line1.numbers).toContain(n)
+      }
+    }
+  })
+
+  it('all lines (including 2+) are valid: correct count, in range, no duplicates', () => {
+    const lines = generatePersonalLines(opts, 5)
+    for (const line of lines) {
+      expect(line.numbers).toHaveLength(6)
+      expect(new Set(line.numbers).size).toBe(6)
+      for (const n of line.numbers) {
+        expect(n).toBeGreaterThanOrEqual(1)
+        expect(n).toBeLessThanOrEqual(49)
+      }
+    }
+  })
+
+  it('lines 2+ do not always contain all in-range personal numbers', () => {
+    // The PROFILE pool has 6 in-range personal numbers. Lines 2+ seed a
+    // strict subset (0 to 5), so at least some runs must produce fewer than 6.
+    // With 20 attempts the probability of random fill completing all 6 every
+    // single time is negligible.
+    const PERSONAL_POOL = new Set([7, 11, 14, 8, 5, 3])
+    let someLineHasFewer = false
+    for (let i = 0; i < 20 && !someLineHasFewer; i++) {
+      const lines = generatePersonalLines(opts, 2)
+      const personalCount = lines[1].numbers.filter((n) => PERSONAL_POOL.has(n)).length
+      if (personalCount < PERSONAL_POOL.size) someLineHasFewer = true
+    }
+    expect(someLineHasFewer).toBe(true)
+  })
+
+  it('lines 2+ vary across separate calls (genuine randomness)', () => {
+    // Collect several line-2 results. At least 2 distinct results should
+    // appear within 10 calls — identical lines would indicate no randomness.
+    const seen = new Set()
+    for (let i = 0; i < 10; i++) {
+      const line2 = generatePersonalLines(opts, 2)[1]
+      seen.add(line2.numbers.join(','))
+    }
+    expect(seen.size).toBeGreaterThan(1)
+  })
+
+  it('single-line request is unaffected by multi-line logic', () => {
+    const [line] = generatePersonalLines(opts, 1)
+    for (const n of [7, 11, 14, 8, 5, 3]) {
+      expect(line.numbers).toContain(n)
+    }
   })
 })
