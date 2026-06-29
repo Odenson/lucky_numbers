@@ -85,6 +85,7 @@ export default function ProfileSheet({ open, profile, onSave, onClose }) {
               min={1900}
               max={CURRENT_YEAR}
               onChange={(year) => set({ year })}
+              lazyClamp
             />
           </div>
 

@@ -139,3 +139,110 @@ describe('Stepper', () => {
     expect(onChange).toHaveBeenCalledWith(4)
   })
 })
+
+// ─── lazyClamp mode ───────────────────────────────────────────────────────────
+
+describe('Stepper — lazyClamp mode', () => {
+  function renderYear(value, onChange = vi.fn()) {
+    const utils = render(
+      <Stepper label="Year" value={value} min={1900} max={2026} onChange={onChange} lazyClamp />,
+    )
+    const input = utils.getByRole('textbox', { name: /Year/i })
+    return { ...utils, input, onChange }
+  }
+
+  it('renders the current value as text', () => {
+    const { input } = renderYear(1988)
+    expect(input).toHaveValue('1988')
+  })
+
+  it('input is type="text" with inputMode="numeric"', () => {
+    const { input } = renderYear(1988)
+    expect(input).toHaveAttribute('type', 'text')
+    expect(input).toHaveAttribute('inputmode', 'numeric')
+  })
+
+  it('typing does NOT call onChange immediately', () => {
+    const { input, onChange } = renderYear(1990)
+    fireEvent.focus(input)
+    fireEvent.change(input, { target: { value: '197' } })
+    expect(onChange).not.toHaveBeenCalled()
+  })
+
+  it('typing shows the in-progress value in the input', () => {
+    const { input } = renderYear(1990)
+    fireEvent.focus(input)
+    fireEvent.change(input, { target: { value: '1975' } })
+    expect(input).toHaveValue('1975')
+  })
+
+  it('onBlur commits the typed value and calls onChange', () => {
+    const { input, onChange } = renderYear(1990)
+    fireEvent.focus(input)
+    fireEvent.change(input, { target: { value: '1975' } })
+    fireEvent.blur(input)
+    expect(onChange).toHaveBeenCalledWith(1975)
+  })
+
+  it('onBlur clamps a value above max to max', () => {
+    const { input, onChange } = renderYear(1990)
+    fireEvent.focus(input)
+    fireEvent.change(input, { target: { value: '2099' } })
+    fireEvent.blur(input)
+    expect(onChange).toHaveBeenCalledWith(2026)
+  })
+
+  it('onBlur clamps a value below min to min', () => {
+    const { input, onChange } = renderYear(1990)
+    fireEvent.focus(input)
+    fireEvent.change(input, { target: { value: '1800' } })
+    fireEvent.blur(input)
+    expect(onChange).toHaveBeenCalledWith(1900)
+  })
+
+  it('onBlur with non-numeric input falls back to the last committed value', () => {
+    const { input, onChange } = renderYear(1990)
+    fireEvent.focus(input)
+    fireEvent.change(input, { target: { value: 'abc' } })
+    fireEvent.blur(input)
+    expect(onChange).toHaveBeenCalledWith(1990)
+  })
+
+  it('minus button decrements from the committed value when not editing', () => {
+    const { onChange, getByRole } = renderYear(1990)
+    fireEvent.click(getByRole('button', { name: /Decrease/i }))
+    expect(onChange).toHaveBeenCalledWith(1989)
+  })
+
+  it('plus button increments from the committed value when not editing', () => {
+    const { onChange, getByRole } = renderYear(1990)
+    fireEvent.click(getByRole('button', { name: /Increase/i }))
+    expect(onChange).toHaveBeenCalledWith(1991)
+  })
+
+  it('minus button uses the in-progress draft as the base', () => {
+    const { input, onChange, getByRole } = renderYear(1990)
+    fireEvent.focus(input)
+    fireEvent.change(input, { target: { value: '1975' } })
+    fireEvent.click(getByRole('button', { name: /Decrease/i }))
+    expect(onChange).toHaveBeenCalledWith(1974)
+  })
+
+  it('plus button uses the in-progress draft as the base', () => {
+    const { input, onChange, getByRole } = renderYear(1990)
+    fireEvent.focus(input)
+    fireEvent.change(input, { target: { value: '1975' } })
+    fireEvent.click(getByRole('button', { name: /Increase/i }))
+    expect(onChange).toHaveBeenCalledWith(1976)
+  })
+
+  it('minus is disabled at min', () => {
+    const { getByRole } = renderYear(1900)
+    expect(getByRole('button', { name: /Decrease/i })).toBeDisabled()
+  })
+
+  it('plus is disabled at max', () => {
+    const { getByRole } = renderYear(2026)
+    expect(getByRole('button', { name: /Increase/i })).toBeDisabled()
+  })
+})
