@@ -1,7 +1,10 @@
 // A compact numeric stepper: label, minus/plus buttons, and a value.
 // Used for count, range bounds, and line count.
-export default function Stepper({ label, value, min, max, onChange, hint }) {
+// Pass `formatValue` to display a formatted string (e.g. month names) while
+// keeping the internal value numeric; the input becomes read-only in that case.
+export default function Stepper({ label, value, min, max, onChange, hint, formatValue }) {
   const clamp = (v) => Math.max(min, Math.min(max, v))
+  const isFormatted = typeof formatValue === 'function'
   return (
     <div className="stepper">
       <div className="stepper-head">
@@ -18,11 +21,12 @@ export default function Stepper({ label, value, min, max, onChange, hint }) {
           &minus;
         </button>
         <input
-          type="number"
-          value={value}
-          min={min}
-          max={max}
-          onChange={(e) => {
+          type={isFormatted ? 'text' : 'number'}
+          value={isFormatted ? formatValue(value) : value}
+          readOnly={isFormatted}
+          min={!isFormatted ? min : undefined}
+          max={!isFormatted ? max : undefined}
+          onChange={isFormatted ? undefined : (e) => {
             const n = parseInt(e.target.value, 10)
             if (!Number.isNaN(n)) onChange(clamp(n))
           }}

@@ -2,6 +2,7 @@ import { useMemo, useState } from 'react'
 import Controls from './components/Controls'
 import ResultLine from './components/ResultLine'
 import ThemeToggle from './components/ThemeToggle'
+import ProfileSheet from './components/ProfileSheet'
 import { useTheme } from './hooks/useTheme'
 import { useLocalStorage } from './hooks/useLocalStorage'
 import { generateLines, validateConfig } from './lib/generator'
@@ -11,7 +12,18 @@ const DEFAULT_CONFIG = { count: 7, min: 1, max: 42, lineCount: 1, allowRepeats: 
 export default function App() {
   const { theme, toggle } = useTheme()
   const [config, setConfig] = useLocalStorage('ln:config', DEFAULT_CONFIG)
+  const [profile, setProfile] = useLocalStorage('ln:profile', null)
+  const [personalMode, setPersonalMode] = useLocalStorage('ln:personalMode', false)
+  const [profileOpen, setProfileOpen] = useState(false)
   const [lines, setLines] = useState([])
+
+  const profileComplete = !!(
+    profile?.name?.trim() &&
+    profile?.city?.trim() &&
+    profile?.country?.trim()
+  )
+  // Auto-disable personal mode if the profile is removed or incomplete.
+  const effectivePersonalMode = personalMode && profileComplete
 
   const error = useMemo(() => validateConfig(config), [config])
 
@@ -39,11 +51,29 @@ export default function App() {
           <SparkIcon />
           <h1>Lucky Numbers</h1>
         </div>
-        <ThemeToggle theme={theme} onToggle={toggle} />
+        <div className="header-actions">
+          <button
+            type="button"
+            className={`profile-btn${profileComplete ? ' profile-btn--active' : ''}`}
+            onClick={() => setProfileOpen(true)}
+            aria-label="Edit your profile"
+            title={profileComplete ? `${profile.name}'s profile` : 'Set up your profile'}
+          >
+            <UserIcon />
+          </button>
+          <ThemeToggle theme={theme} onToggle={toggle} />
+        </div>
       </header>
 
       <main className="app-main">
-        <Controls config={config} onChange={setConfig} error={error} />
+        <Controls
+          config={config}
+          onChange={setConfig}
+          error={error}
+          personalMode={effectivePersonalMode}
+          onPersonalModeChange={setPersonalMode}
+          profileComplete={profileComplete}
+        />
 
         <button type="button" className="generate-btn" onClick={generate} disabled={!!error}>
           <DiceIcon />
@@ -81,8 +111,15 @@ export default function App() {
 
       <footer className="app-footer">
         <span>Stage 1 · random draw</span>
-        <span className="footer-soon">Personal &amp; pattern modes coming soon</span>
+        <span className="footer-soon">Pattern mode coming soon</span>
       </footer>
+
+      <ProfileSheet
+        open={profileOpen}
+        profile={profile}
+        onSave={setProfile}
+        onClose={() => setProfileOpen(false)}
+      />
     </div>
   )
 }
@@ -91,6 +128,15 @@ function SparkIcon() {
   return (
     <svg viewBox="0 0 24 24" width="22" height="22" fill="currentColor" aria-hidden="true">
       <path d="M12 2l1.8 6.2L20 10l-6.2 1.8L12 18l-1.8-6.2L4 10l6.2-1.8L12 2Z" />
+    </svg>
+  )
+}
+
+function UserIcon() {
+  return (
+    <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <circle cx="12" cy="8" r="4" />
+      <path d="M4 20c0-4 3.6-7 8-7s8 3 8 7" />
     </svg>
   )
 }
