@@ -99,7 +99,7 @@ input {
   opacity: 0.5;
 }
 
-.app > *:not(.aurora) {
+.app > *:not(.aurora):not(.sheet-backdrop) {
   position: relative;
   z-index: 1;
 }
@@ -511,8 +511,9 @@ input {
   background: rgba(0, 0, 0, 0.6);
   z-index: 100;
   display: flex;
-  align-items: flex-end;
+  align-items: center;
   justify-content: center;
+  padding: 20px;
   animation: fade-in 0.2s ease;
 }
 
@@ -522,20 +523,19 @@ input {
 
 .sheet {
   width: 100%;
-  max-width: 560px;
+  max-width: 480px;
   background: var(--bg-soft);
-  border-radius: var(--radius) var(--radius) 0 0;
+  border-radius: var(--radius);
   border: 1px solid var(--border);
-  border-bottom: none;
   box-shadow: var(--shadow);
-  animation: slide-up 0.3s cubic-bezier(0.22, 1, 0.36, 1);
+  animation: modal-in 0.25s cubic-bezier(0.22, 1, 0.36, 1);
   max-height: 92dvh;
   overflow-y: auto;
 }
 
-@keyframes slide-up {
-  from { transform: translateY(100%); }
-  to   { transform: translateY(0); }
+@keyframes modal-in {
+  from { opacity: 0; transform: scale(0.95) translateY(8px); }
+  to   { opacity: 1; transform: scale(1)   translateY(0); }
 }
 
 @keyframes fade-in {
@@ -693,10 +693,10 @@ input {
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .ball {
+  .ball,
+  .sheet {
     animation: none;
   }
-  .sheet,
   .sheet-backdrop {
     animation: none;
   }
