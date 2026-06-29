@@ -1,8 +1,11 @@
 import { useState } from 'react'
 import Ball from './Ball'
+import { getPersonalNumberType } from '../lib/personal'
 
 // One generated line of balls with copy / share actions.
-export default function ResultLine({ numbers, min, max, label }) {
+// In personal mode, pass `profile` and `personalMode` to activate type-based
+// ball colouring.
+export default function ResultLine({ numbers, min, max, label, profile, personalMode }) {
   const [copied, setCopied] = useState(false)
   const text = numbers.join(', ')
 
@@ -40,7 +43,14 @@ export default function ResultLine({ numbers, min, max, label }) {
       <span className="result-line-label">{label}</span>
       <div className="result-balls">
         {numbers.map((n, i) => (
-          <Ball key={`${n}-${i}`} value={n} min={min} max={max} index={i} />
+          <Ball
+            key={`${n}-${i}`}
+            value={n}
+            min={min}
+            max={max}
+            index={i}
+            type={personalMode && profile ? getPersonalNumberType(n, profile) : undefined}
+          />
         ))}
       </div>
       <div className="result-actions">

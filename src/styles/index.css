@@ -99,7 +99,7 @@ input {
   opacity: 0.5;
 }
 
-.app > *:not(.aurora) {
+.app > *:not(.aurora):not(.sheet-backdrop) {
   position: relative;
   z-index: 1;
 }
@@ -111,6 +111,12 @@ input {
   align-items: center;
   justify-content: space-between;
   margin-bottom: 28px;
+}
+
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
 }
 
 .brand {
@@ -144,6 +150,31 @@ input {
   color: var(--accent);
   border-color: var(--accent);
   transform: rotate(-12deg);
+}
+
+/* ---------- Profile button ---------- */
+
+.profile-btn {
+  display: grid;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--text-dim);
+  transition: transform 0.2s ease, color 0.2s ease, border-color 0.2s ease;
+}
+
+.profile-btn:hover {
+  color: var(--accent);
+  border-color: var(--accent);
+  transform: rotate(-12deg);
+}
+
+.profile-btn--active {
+  color: var(--accent);
+  border-color: var(--accent);
 }
 
 /* ---------- Controls ---------- */
@@ -362,6 +393,43 @@ input {
   animation: pop 0.4s cubic-bezier(0.18, 0.89, 0.32, 1.28) backwards;
 }
 
+/* Fill balls in personal mode: ghost style so they stand apart from typed balls. */
+.ball--fill {
+  background: var(--surface-2);
+  color: var(--text-dim);
+  box-shadow: inset 0 0 0 1.5px var(--border), 0 4px 10px -4px rgba(0, 0, 0, 0.15);
+}
+
+/* ---------- Personal colour legend ---------- */
+
+.personal-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 14px;
+  margin-bottom: 10px;
+}
+
+.legend-item {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 11px;
+  color: var(--text-faint);
+  letter-spacing: 0.02em;
+}
+
+.legend-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.legend-dot--fill {
+  background: var(--surface-2);
+  border: 1.5px solid var(--border);
+}
+
 @keyframes pop {
   from {
     opacity: 0;
@@ -397,6 +465,264 @@ input {
   border-color: var(--accent);
 }
 
+/* ---------- Personal mode row ---------- */
+
+.personal-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 14px;
+  padding-top: 14px;
+  border-top: 1px solid var(--border);
+  gap: 12px;
+}
+
+.personal-row--disabled {
+  opacity: 0.5;
+}
+
+.personal-label {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.personal-label-main {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text-dim);
+}
+
+.personal-label-sub {
+  font-size: 11px;
+  color: var(--text-faint);
+}
+
+/* ---------- Toggle switch ---------- */
+
+.toggle {
+  flex-shrink: 0;
+  width: 44px;
+  height: 26px;
+  border-radius: 13px;
+  border: none;
+  background: var(--surface-2);
+  box-shadow: inset 0 0 0 1px var(--border);
+  position: relative;
+  padding: 0;
+  cursor: pointer;
+  transition: background 0.2s ease, box-shadow 0.2s ease;
+}
+
+.toggle--on {
+  background: var(--accent-strong);
+  box-shadow: none;
+}
+
+.toggle:disabled {
+  cursor: not-allowed;
+}
+
+.toggle-thumb {
+  position: absolute;
+  top: 3px;
+  left: 3px;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: var(--text-faint);
+  transition: transform 0.2s ease, background 0.2s ease;
+  pointer-events: none;
+}
+
+.toggle--on .toggle-thumb {
+  transform: translateX(18px);
+  background: #fff;
+}
+
+/* ---------- Profile sheet ---------- */
+
+.sheet-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.6);
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  animation: fade-in 0.2s ease;
+}
+
+:root[data-theme='light'] .sheet-backdrop {
+  background: rgba(20, 18, 40, 0.4);
+}
+
+.sheet {
+  width: 100%;
+  max-width: 480px;
+  background: var(--bg-soft);
+  border-radius: var(--radius);
+  border: 1px solid var(--border);
+  box-shadow: var(--shadow);
+  animation: modal-in 0.25s cubic-bezier(0.22, 1, 0.36, 1);
+  max-height: 92dvh;
+  overflow-y: auto;
+}
+
+@keyframes modal-in {
+  from { opacity: 0; transform: scale(0.95) translateY(8px); }
+  to   { opacity: 1; transform: scale(1)   translateY(0); }
+}
+
+@keyframes fade-in {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+.sheet-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 20px 20px 0;
+  position: sticky;
+  top: 0;
+  background: var(--bg-soft);
+  z-index: 1;
+}
+
+.sheet-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--text);
+}
+
+.sheet-title svg {
+  color: var(--accent);
+}
+
+.sheet-close {
+  display: grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--text-dim);
+  transition: color 0.15s ease, border-color 0.15s ease;
+}
+
+.sheet-close:hover {
+  color: var(--accent);
+  border-color: var(--accent);
+}
+
+.sheet-body {
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+/* ---------- Form fields ---------- */
+
+.field-label {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text-dim);
+  margin-top: 10px;
+}
+
+.field-label:first-child {
+  margin-top: 0;
+}
+
+.field-input {
+  width: 100%;
+  height: 48px;
+  padding: 0 14px;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  color: var(--text);
+  font-size: 15px;
+  transition: border-color 0.15s ease;
+  -webkit-appearance: none;
+  appearance: none;
+}
+
+.field-input::placeholder {
+  color: var(--text-faint);
+}
+
+.field-input:focus {
+  outline: none;
+  border-color: var(--accent);
+}
+
+/* ---------- Date of birth grid ---------- */
+
+.dob-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+
+.location-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+
+.field-label--section {
+  margin-top: 18px;
+  padding-top: 18px;
+  border-top: 1px solid var(--border);
+}
+
+.field-hint {
+  margin: 0 0 4px;
+  font-size: 12px;
+  color: var(--text-faint);
+  line-height: 1.5;
+}
+
+.field-optional {
+  font-weight: 400;
+  color: var(--text-faint);
+}
+
+/* ---------- Sheet action buttons ---------- */
+
+.sheet-save-btn {
+  margin-top: 14px;
+}
+
+.cancel-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  padding: 14px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--surface-2);
+  color: var(--text-dim);
+  font-size: 15px;
+  font-weight: 500;
+  margin-top: 8px;
+  transition: color 0.15s ease, border-color 0.15s ease;
+}
+
+.cancel-btn:hover {
+  color: var(--accent);
+  border-color: var(--accent);
+}
+
 /* ---------- Misc ---------- */
 
 .empty-hint {
@@ -428,10 +754,101 @@ input {
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .ball {
+  .ball,
+  .sheet {
     animation: none;
+  }
+  .sheet-backdrop {
+    animation: none;
+  }
+  .toggle-thumb {
+    transition: none;
   }
   * {
     transition: none !important;
   }
+}
+
+/* ---------- Numbers breakdown ---------- */
+
+.breakdown-profile {
+  font-size: 13px;
+  color: var(--text-dim);
+  margin: 0 0 4px;
+}
+
+.breakdown-section-label {
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--text-dim);
+  margin: 20px 0 4px;
+  opacity: 0.7;
+}
+
+.breakdown-section-label:first-of-type {
+  margin-top: 8px;
+}
+
+.breakdown-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+  padding: 12px 0;
+  border-bottom: 1px solid var(--border);
+}
+
+.breakdown-item:last-child {
+  border-bottom: none;
+}
+
+.breakdown-ball {
+  flex-shrink: 0;
+  padding-top: 2px;
+}
+
+.breakdown-info {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.breakdown-label-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.breakdown-label {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text);
+}
+
+.breakdown-master {
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  background: rgba(239, 159, 39, 0.12);
+  color: #EF9F27;
+  padding: 2px 7px;
+  border-radius: 20px;
+  border: 1px solid rgba(239, 159, 39, 0.25);
+}
+
+.breakdown-formula {
+  font-size: 12px;
+  font-family: ui-monospace, 'SF Mono', 'Cascadia Code', Menlo, monospace;
+  color: var(--text-dim);
+}
+
+.breakdown-meaning {
+  font-size: 12px;
+  color: var(--text-dim);
+  line-height: 1.55;
 }

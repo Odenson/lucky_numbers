@@ -25,6 +25,8 @@ jobs:
 
       - run: npm ci
 
+      - run: npm test
+
       - run: npm run build
         env:
           DEPLOY_BASE: /lucky_numbers/

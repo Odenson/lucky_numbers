@@ -8,4 +8,15 @@ const base = process.env.DEPLOY_BASE ?? '/'
 export default defineConfig({
   plugins: [react()],
   base,
+  test: {
+    globals: true,
+    environment: 'jsdom',
+    setupFiles: ['./src/test/setup.js'],
+    coverage: {
+      provider: 'v8',
+      reporter: ['text', 'html'],
+      include: ['src/lib/**', 'src/components/**', 'src/hooks/**'],
+      exclude: ['src/test/**'],
+    },
+  },
 })

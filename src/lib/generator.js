@@ -4,19 +4,7 @@
 // (personal-detail seeding in stage 2, historical-pattern weighting in stage 3)
 // can plug in by swapping the `pick` strategy without touching the UI.
 
-// Cryptographically-strong integer in [min, max] inclusive, unbiased.
-function randomInt(min, max) {
-  const range = max - min + 1
-  // Rejection sampling to avoid modulo bias.
-  const maxUnbiased = Math.floor(0xffffffff / range) * range
-  const buf = new Uint32Array(1)
-  let value
-  do {
-    crypto.getRandomValues(buf)
-    value = buf[0]
-  } while (value >= maxUnbiased)
-  return min + (value % range)
-}
+import { randomInt } from './random.js'
 
 /**
  * Generate a single line of lucky numbers.
