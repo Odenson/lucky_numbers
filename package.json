@@ -4,6 +4,9 @@
   "version": "0.1.0",
   "type": "module",
   "description": "Generate lucky numbers for lotto systems",
+  "engines": {
+    "node": ">=22"
+  },
   "scripts": {
     "dev": "vite",
     "build": "vite build",
@@ -13,16 +16,16 @@
     "test:coverage": "vitest run --coverage"
   },
   "dependencies": {
-    "react": "^18.3.1",
-    "react-dom": "^18.3.1"
+    "react": "^19.2.7",
+    "react-dom": "^19.2.7"
   },
   "devDependencies": {
     "@testing-library/jest-dom": "^6.9.1",
     "@testing-library/react": "^16.3.2",
-    "@vitejs/plugin-react": "^4.3.4",
+    "@vitejs/plugin-react": "^6.0.3",
     "@vitest/coverage-v8": "^4.1.9",
     "jsdom": "^29.1.1",
-    "vite": "^6.0.7",
+    "vite": "^8.1.0",
     "vitest": "^4.1.9"
   }
 }
