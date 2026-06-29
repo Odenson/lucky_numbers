@@ -17,3 +17,15 @@ export function ballColor(value, min, max) {
   const idx = Math.min(BALL_COLORS.length - 1, Math.floor(ratio * BALL_COLORS.length))
   return BALL_COLORS[idx]
 }
+
+// Per-type colours used in personal mode.
+// 'fill' is intentionally absent — callers fall back to CSS (.ball--fill).
+const PERSONAL_TYPE_COLORS = {
+  'life-path':  ['#EF9F27', '#412402'],  // amber  — the key DOB number
+  'expression': ['#1D9E75', '#E1F5EE'],  // teal   — name-derived
+  'personal':   ['#534AB7', '#EEEDFE'],  // purple — remaining DOB pool
+}
+
+export function personalBallColor(type) {
+  return PERSONAL_TYPE_COLORS[type] ?? null
+}

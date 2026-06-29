@@ -393,6 +393,43 @@ input {
   animation: pop 0.4s cubic-bezier(0.18, 0.89, 0.32, 1.28) backwards;
 }
 
+/* Fill balls in personal mode: ghost style so they stand apart from typed balls. */
+.ball--fill {
+  background: var(--surface-2);
+  color: var(--text-dim);
+  box-shadow: inset 0 0 0 1.5px var(--border), 0 4px 10px -4px rgba(0, 0, 0, 0.15);
+}
+
+/* ---------- Personal colour legend ---------- */
+
+.personal-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 14px;
+  margin-bottom: 10px;
+}
+
+.legend-item {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 11px;
+  color: var(--text-faint);
+  letter-spacing: 0.02em;
+}
+
+.legend-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.legend-dot--fill {
+  background: var(--surface-2);
+  border: 1.5px solid var(--border);
+}
+
 @keyframes pop {
   from {
     opacity: 0;

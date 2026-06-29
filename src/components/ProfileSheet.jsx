@@ -4,7 +4,7 @@ import Stepper from './Stepper'
 const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
 const CURRENT_YEAR = new Date().getFullYear()
 
-const EMPTY_DRAFT = { name: '', day: 1, month: 1, year: 1990, city: '', country: '' }
+const EMPTY_DRAFT = { name: '', day: 1, month: 1, year: 1990 }
 
 export default function ProfileSheet({ open, profile, onSave, onClose }) {
   const [draft, setDraft] = useState(EMPTY_DRAFT)
@@ -16,10 +16,7 @@ export default function ProfileSheet({ open, profile, onSave, onClose }) {
 
   const set = (patch) => setDraft((d) => ({ ...d, ...patch }))
 
-  const isComplete =
-    draft.name.trim().length > 0 &&
-    draft.city.trim().length > 0 &&
-    draft.country.trim().length > 0
+  const isComplete = draft.name.trim().length > 0
 
   const handleSave = () => {
     if (!isComplete) return
@@ -90,28 +87,6 @@ export default function ProfileSheet({ open, profile, onSave, onClose }) {
               onChange={(year) => set({ year })}
             />
           </div>
-
-          <label className="field-label" htmlFor="profile-city">City of birth</label>
-          <input
-            id="profile-city"
-            className="field-input"
-            type="text"
-            value={draft.city}
-            onChange={(e) => set({ city: e.target.value })}
-            placeholder="London"
-            autoComplete="address-level2"
-          />
-
-          <label className="field-label" htmlFor="profile-country">Country of birth</label>
-          <input
-            id="profile-country"
-            className="field-input"
-            type="text"
-            value={draft.country}
-            onChange={(e) => set({ country: e.target.value })}
-            placeholder="United Kingdom"
-            autoComplete="country-name"
-          />
 
           <button
             type="button"

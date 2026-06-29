@@ -6,6 +6,7 @@ import ProfileSheet from './components/ProfileSheet'
 import { useTheme } from './hooks/useTheme'
 import { useLocalStorage } from './hooks/useLocalStorage'
 import { generateLines, validateConfig } from './lib/generator'
+import { generatePersonalLines } from './lib/personal'
 
 const DEFAULT_CONFIG = { count: 7, min: 1, max: 42, lineCount: 1, allowRepeats: false }
 
@@ -17,11 +18,7 @@ export default function App() {
   const [profileOpen, setProfileOpen] = useState(false)
   const [lines, setLines] = useState([])
 
-  const profileComplete = !!(
-    profile?.name?.trim() &&
-    profile?.city?.trim() &&
-    profile?.country?.trim()
-  )
+  const profileComplete = !!profile?.name?.trim()
   // Auto-disable personal mode if the profile is removed or incomplete.
   const effectivePersonalMode = personalMode && profileComplete
 
@@ -30,7 +27,11 @@ export default function App() {
   const generate = () => {
     if (error) return
     const { count, min, max, allowRepeats, lineCount } = config
-    setLines(generateLines({ count, min, max, allowRepeats }, lineCount))
+    if (effectivePersonalMode) {
+      setLines(generatePersonalLines({ count, min, max, profile }, lineCount))
+    } else {
+      setLines(generateLines({ count, min, max, allowRepeats }, lineCount))
+    }
   }
 
   const copyAll = async () => {
@@ -90,6 +91,26 @@ export default function App() {
                 </button>
               )}
             </div>
+            {effectivePersonalMode && (
+              <div className="personal-legend" aria-label="Colour key">
+                <span className="legend-item">
+                  <span className="legend-dot" style={{ background: '#EF9F27' }} />
+                  Life Path
+                </span>
+                <span className="legend-item">
+                  <span className="legend-dot" style={{ background: '#1D9E75' }} />
+                  Expression
+                </span>
+                <span className="legend-item">
+                  <span className="legend-dot" style={{ background: '#534AB7' }} />
+                  Personal
+                </span>
+                <span className="legend-item">
+                  <span className="legend-dot legend-dot--fill" />
+                  Fill
+                </span>
+              </div>
+            )}
             <ul className="results-list">
               {lines.map((line, i) => (
                 <ResultLine
@@ -98,6 +119,8 @@ export default function App() {
                   min={config.min}
                   max={config.max}
                   label={lines.length > 1 ? `Line ${i + 1}` : 'Line'}
+                  profile={profile}
+                  personalMode={effectivePersonalMode}
                 />
               ))}
             </ul>
