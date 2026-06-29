@@ -8,6 +8,11 @@
 //   · Any remaining slots are filled with a cryptographically-strong
 //     random draw, keeping each generation fresh.
 
+const MONTH_NAMES = [
+  'January','February','March','April','May','June',
+  'July','August','September','October','November','December',
+]
+
 // ─── Pythagorean letter-to-number table ──────────────────────────────────────
 
 const PYTHAGOREAN = {
@@ -196,4 +201,121 @@ export function generatePersonalLines({ count, min, max, profile }, lineCount = 
       numbers: generatePersonalLine({ count, min, max, profile, personalSeed }),
     }
   })
+}
+
+// ─── Personal numbers breakdown ───────────────────────────────────────────────
+
+/**
+ * Build a structured breakdown of all derived personal numbers for display.
+ *
+ * Each item contains:
+ *   { type, label, value, isMaster, formula, meaning }
+ *
+ * Only numbers that are unique and present in the personal pool are included.
+ * Items are ordered: Life Path → Expression → remaining personal components.
+ */
+export function buildPersonalBreakdown({ name, day, month, year }) {
+  const monthR      = reduceDigit(month)
+  const dayR        = reduceDigit(day)
+  const yearDigits  = digitSum(year)
+  const yearR       = reduceDigit(yearDigits)
+  const lifePathRaw = monthR + dayR + yearR
+  const lifePath    = reduceDigit(lifePathRaw)
+  const attitudeRaw = month + day
+  const attitude    = reduceDigit(attitudeRaw)
+  const expression  = name?.trim() ? calcExpressionNumber(name) : null
+  const pool        = buildPersonalPool({ name, day, month, year })
+
+  const isMaster  = (n) => n === 11 || n === 22 || n === 33
+  const sumStr    = (raw, result) => raw === result ? String(result) : `${raw} → ${result}`
+
+  // ── Expression formula: "Word1(n) + Word2(n) = total → result" ──
+  let expressionFormula = null
+  if (name?.trim() && expression !== null) {
+    const parts    = name.trim().split(/\s+/).filter((p) => p.length > 0)
+    const wordVals = parts.map((p) => ({ word: p, val: reduceDigit(namePartSum(p)) }))
+    const total    = wordVals.reduce((s, w) => s + w.val, 0)
+    const wordStr  = wordVals.map((w) => `${w.word}(${w.val})`).join(' + ')
+    expressionFormula = `${wordStr} = ${sumStr(total, expression)}`
+  }
+
+  const items  = []
+  const added  = new Set()
+
+  // Life Path — always shown
+  items.push({
+    type:    'life-path',
+    label:   'Life Path',
+    value:   lifePath,
+    isMaster: isMaster(lifePath),
+    formula: `${monthR} + ${dayR} + ${yearR} = ${sumStr(lifePathRaw, lifePath)}`,
+    meaning: 'The most significant number — the core traits and direction of your life\'s journey.',
+  })
+  added.add(lifePath)
+
+  // Expression — only when a name is provided
+  if (expression !== null) {
+    items.push({
+      type:    'expression',
+      label:   'Expression',
+      value:   expression,
+      isMaster: isMaster(expression),
+      formula: expressionFormula,
+      meaning: 'Derived from your full name — your natural talents and the person you are becoming.',
+    })
+    added.add(expression)
+  }
+
+  // Remaining personal components — added only if present in pool and not yet shown
+  const candidates = [
+    {
+      value:   day,
+      label:   'Birthday',
+      formula: `Birth day ${day}`,
+      meaning: 'Your raw birth day — the gifts and traits you were born with.',
+    },
+    {
+      value:   attitude,
+      label:   'Attitude',
+      formula: `${month} + ${day} = ${sumStr(attitudeRaw, attitude)}`,
+      meaning: 'How you instinctively present yourself and create first impressions.',
+    },
+    {
+      value:   dayR,
+      label:   'Day',
+      formula: day === dayR ? `Birth day ${day}` : `${day} → ${dayR}`,
+      meaning: 'The numerological essence of your birth day.',
+    },
+    {
+      value:   monthR,
+      label:   'Month',
+      formula: month === monthR
+        ? `${MONTH_NAMES[month - 1]} (${month})`
+        : `${month} → ${monthR}`,
+      meaning: 'The energy of the month you were born into.',
+    },
+    {
+      value:   yearR,
+      label:   'Year',
+      formula: yearDigits === yearR
+        ? `${year} → ${yearDigits}`
+        : `${year} → ${yearDigits} → ${yearR}`,
+      meaning: 'The essence of the year you were born.',
+    },
+    {
+      value:   month,
+      label:   'Birth Month',
+      formula: `${MONTH_NAMES[month - 1]} (${month})`,
+      meaning: 'The raw energy of your birth month.',
+    },
+  ]
+
+  for (const c of candidates) {
+    if (pool.includes(c.value) && !added.has(c.value)) {
+      items.push({ ...c, type: 'personal', isMaster: isMaster(c.value) })
+      added.add(c.value)
+    }
+  }
+
+  return items
 }

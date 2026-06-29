@@ -3,6 +3,7 @@ import Controls from './components/Controls'
 import ResultLine from './components/ResultLine'
 import ThemeToggle from './components/ThemeToggle'
 import ProfileSheet from './components/ProfileSheet'
+import NumbersBreakdown from './components/NumbersBreakdown'
 import { useTheme } from './hooks/useTheme'
 import { useLocalStorage } from './hooks/useLocalStorage'
 import { generateLines, validateConfig } from './lib/generator'
@@ -16,6 +17,7 @@ export default function App() {
   const [profile, setProfile] = useLocalStorage('ln:profile', null)
   const [personalMode, setPersonalMode] = useLocalStorage('ln:personalMode', false)
   const [profileOpen, setProfileOpen] = useState(false)
+  const [breakdownOpen, setBreakdownOpen] = useState(false)
   const [lines, setLines] = useState([])
 
   const profileComplete = !!profile?.name?.trim()
@@ -53,6 +55,17 @@ export default function App() {
           <h1>Lucky Numbers</h1>
         </div>
         <div className="header-actions">
+          {profileComplete && (
+            <button
+              type="button"
+              className="profile-btn"
+              onClick={() => setBreakdownOpen(true)}
+              aria-label="View your lucky numbers breakdown"
+              title="Your lucky numbers"
+            >
+              <GridIcon />
+            </button>
+          )}
           <button
             type="button"
             className={`profile-btn${profileComplete ? ' profile-btn--active' : ''}`}
@@ -143,6 +156,12 @@ export default function App() {
         onSave={setProfile}
         onClose={() => setProfileOpen(false)}
       />
+
+      <NumbersBreakdown
+        open={breakdownOpen}
+        profile={profile}
+        onClose={() => setBreakdownOpen(false)}
+      />
     </div>
   )
 }
@@ -151,6 +170,17 @@ function SparkIcon() {
   return (
     <svg viewBox="0 0 24 24" width="22" height="22" fill="currentColor" aria-hidden="true">
       <path d="M12 2l1.8 6.2L20 10l-6.2 1.8L12 18l-1.8-6.2L4 10l6.2-1.8L12 2Z" />
+    </svg>
+  )
+}
+
+function GridIcon() {
+  return (
+    <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <rect x="3" y="3" width="7" height="7" rx="1.5" />
+      <rect x="14" y="3" width="7" height="7" rx="1.5" />
+      <rect x="3" y="14" width="7" height="7" rx="1.5" />
+      <rect x="14" y="14" width="7" height="7" rx="1.5" />
     </svg>
   )
 }
