@@ -43,12 +43,12 @@ describe('ballColor', () => {
 // ─── personalBallColor ────────────────────────────────────────────────────────
 
 describe('personalBallColor', () => {
-  it('"life-path" returns amber [#EF9F27, #412402]', () => {
-    expect(personalBallColor('life-path')).toEqual(['#EF9F27', '#412402'])
+  it('"life-path" returns yellow [#F0C52A, #2C1A00]', () => {
+    expect(personalBallColor('life-path')).toEqual(['#F0C52A', '#2C1A00'])
   })
 
-  it('"expression" returns teal [#1D9E75, #E1F5EE]', () => {
-    expect(personalBallColor('expression')).toEqual(['#1D9E75', '#E1F5EE'])
+  it('"expression" returns green [#16A34A, #DCFCE7]', () => {
+    expect(personalBallColor('expression')).toEqual(['#16A34A', '#DCFCE7'])
   })
 
   it('"personal" returns purple [#534AB7, #EEEDFE]', () => {

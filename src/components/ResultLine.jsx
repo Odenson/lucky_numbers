@@ -1,11 +1,32 @@
 import { useState } from 'react'
 import Ball from './Ball'
 import { getPersonalNumberType } from '../lib/personal'
+import { getHistoryNumberType } from '../lib/history'
+
+// Resolve ball type with correct priority:
+//   personal-typed numbers always keep their colour.
+//   fill slots in personal mode (or all slots in history-only mode) show
+//   hot/cold when history is active, neutral ghost otherwise.
+//   No mode → undefined → range-based Stage 1 colours.
+function resolveBallType(n, { personalMode, profile, historyMode, historyStats }) {
+  if (personalMode && profile) {
+    const pType = getPersonalNumberType(n, profile)
+    if (pType !== 'fill') return pType
+    // fill slot — promote to hot/cold if history is also on
+    if (historyMode && historyStats) {
+      return getHistoryNumberType(n, historyStats.hotSet, historyStats.coldSet) ?? 'fill'
+    }
+    return 'fill'
+  }
+  if (historyMode && historyStats) {
+    // neutral numbers become 'fill' (ghost), not random range colours
+    return getHistoryNumberType(n, historyStats.hotSet, historyStats.coldSet) ?? 'fill'
+  }
+  return undefined // Stage 1: range-based jewel colours
+}
 
 // One generated line of balls with copy / share actions.
-// In personal mode, pass `profile` and `personalMode` to activate type-based
-// ball colouring.
-export default function ResultLine({ numbers, min, max, label, profile, personalMode }) {
+export default function ResultLine({ numbers, min, max, label, profile, personalMode, historyMode, historyStats }) {
   const [copied, setCopied] = useState(false)
   const text = numbers.join(', ')
 
@@ -49,7 +70,7 @@ export default function ResultLine({ numbers, min, max, label, profile, personal
             min={min}
             max={max}
             index={i}
-            type={personalMode && profile ? getPersonalNumberType(n, profile) : undefined}
+            type={resolveBallType(n, { personalMode, profile, historyMode, historyStats })}
           />
         ))}
       </div>

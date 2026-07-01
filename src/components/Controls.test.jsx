@@ -12,6 +12,10 @@ function renderControls(overrides = {}) {
     personalMode: false,
     onPersonalModeChange: vi.fn(),
     profileComplete: false,
+    historyMode: false,
+    onHistoryModeChange: vi.fn(),
+    historyBias: 'hot',
+    onHistoryBiasChange: vi.fn(),
     ...overrides,
   }
   return { ...render(<Controls {...props} />), ...props }
@@ -49,34 +53,36 @@ describe('Controls', () => {
   })
 
   describe('personal mode toggle', () => {
+    const personalSwitch = (utils) => utils.getByRole('switch', { name: 'Personal lucky numbers' })
+
     it('toggle is disabled when profileComplete is false', () => {
-      const { getByRole } = renderControls({ profileComplete: false })
-      expect(getByRole('switch')).toBeDisabled()
+      const utils = renderControls({ profileComplete: false })
+      expect(personalSwitch(utils)).toBeDisabled()
     })
 
     it('toggle is enabled when profileComplete is true', () => {
-      const { getByRole } = renderControls({ profileComplete: true })
-      expect(getByRole('switch')).not.toBeDisabled()
+      const utils = renderControls({ profileComplete: true })
+      expect(personalSwitch(utils)).not.toBeDisabled()
     })
 
     it('clicking toggle calls onPersonalModeChange with true when off', () => {
       const onPersonalModeChange = vi.fn()
-      const { getByRole } = renderControls({ profileComplete: true, personalMode: false, onPersonalModeChange })
-      fireEvent.click(getByRole('switch'))
+      const utils = renderControls({ profileComplete: true, personalMode: false, onPersonalModeChange })
+      fireEvent.click(personalSwitch(utils))
       expect(onPersonalModeChange).toHaveBeenCalledWith(true)
     })
 
     it('clicking toggle calls onPersonalModeChange with false when on', () => {
       const onPersonalModeChange = vi.fn()
-      const { getByRole } = renderControls({ profileComplete: true, personalMode: true, onPersonalModeChange })
-      fireEvent.click(getByRole('switch'))
+      const utils = renderControls({ profileComplete: true, personalMode: true, onPersonalModeChange })
+      fireEvent.click(personalSwitch(utils))
       expect(onPersonalModeChange).toHaveBeenCalledWith(false)
     })
 
     it('clicking disabled toggle does not call onPersonalModeChange', () => {
       const onPersonalModeChange = vi.fn()
-      const { getByRole } = renderControls({ profileComplete: false, onPersonalModeChange })
-      fireEvent.click(getByRole('switch'))
+      const utils = renderControls({ profileComplete: false, onPersonalModeChange })
+      fireEvent.click(personalSwitch(utils))
       expect(onPersonalModeChange).not.toHaveBeenCalled()
     })
 
@@ -88,6 +94,56 @@ describe('Controls', () => {
     it('shows description text when profile is complete', () => {
       const { getByText } = renderControls({ profileComplete: true })
       expect(getByText('Based on your name & birth details')).toBeInTheDocument()
+    })
+  })
+
+  describe('history mode toggle', () => {
+    const historySwitch = (utils) => utils.getByRole('switch', { name: 'Historical weighting' })
+
+    it('renders the history toggle', () => {
+      const utils = renderControls()
+      expect(historySwitch(utils)).toBeInTheDocument()
+    })
+
+    it('toggle is always enabled', () => {
+      const utils = renderControls()
+      expect(historySwitch(utils)).not.toBeDisabled()
+    })
+
+    it('clicking toggle calls onHistoryModeChange with true when off', () => {
+      const onHistoryModeChange = vi.fn()
+      const utils = renderControls({ historyMode: false, onHistoryModeChange })
+      fireEvent.click(historySwitch(utils))
+      expect(onHistoryModeChange).toHaveBeenCalledWith(true)
+    })
+
+    it('clicking toggle calls onHistoryModeChange with false when on', () => {
+      const onHistoryModeChange = vi.fn()
+      const utils = renderControls({ historyMode: true, onHistoryModeChange })
+      fireEvent.click(historySwitch(utils))
+      expect(onHistoryModeChange).toHaveBeenCalledWith(false)
+    })
+
+    it('bias chips are hidden when history mode is off', () => {
+      const { queryByRole } = renderControls({ historyMode: false })
+      expect(queryByRole('group', { name: 'Weighting bias' })).not.toBeInTheDocument()
+    })
+
+    it('bias chips are visible when history mode is on', () => {
+      const { getByRole } = renderControls({ historyMode: true })
+      expect(getByRole('group', { name: 'Weighting bias' })).toBeInTheDocument()
+    })
+
+    it('clicking a bias chip calls onHistoryBiasChange', () => {
+      const onHistoryBiasChange = vi.fn()
+      const { getByRole } = renderControls({ historyMode: true, onHistoryBiasChange })
+      fireEvent.click(getByRole('button', { name: /Cold/i }))
+      expect(onHistoryBiasChange).toHaveBeenCalledWith('cold')
+    })
+
+    it('selected bias chip has pressed state', () => {
+      const { getByRole } = renderControls({ historyMode: true, historyBias: 'balanced' })
+      expect(getByRole('button', { name: /Balanced/i })).toHaveAttribute('aria-pressed', 'true')
     })
   })
 })

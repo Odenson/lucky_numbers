@@ -400,6 +400,44 @@ input {
   box-shadow: inset 0 0 0 1.5px var(--border), 0 4px 10px -4px rgba(0, 0, 0, 0.15);
 }
 
+/* History mode ball types */
+.ball--hot {
+  background: rgba(239, 68, 68, 0.15);
+  color: #EF4444;
+  box-shadow: inset 0 0 0 1.5px rgba(239, 68, 68, 0.45), 0 4px 10px -4px rgba(0, 0, 0, 0.15);
+}
+
+.ball--cold {
+  background: rgba(55, 138, 221, 0.12);
+  color: #378ADD;
+  box-shadow: inset 0 0 0 1.5px rgba(55, 138, 221, 0.35), 0 4px 10px -4px rgba(0, 0, 0, 0.15);
+}
+
+/* Hover tooltip — shown for typed balls only (data-tooltip is set by Ball.jsx) */
+.ball[data-tooltip] {
+  position: relative;
+}
+
+.ball[data-tooltip]:hover::after {
+  content: attr(data-tooltip);
+  position: absolute;
+  bottom: calc(100% + 7px);
+  left: 50%;
+  transform: translateX(-50%);
+  background: var(--surface-3, #2a2a3e);
+  color: var(--text, #e0e0f0);
+  font-size: 0.6rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  padding: 3px 8px;
+  border-radius: 4px;
+  white-space: nowrap;
+  pointer-events: none;
+  z-index: 20;
+  border: 1px solid var(--border, rgba(255,255,255,0.1));
+}
+
 /* ---------- Personal colour legend ---------- */
 
 .personal-legend {
@@ -428,6 +466,14 @@ input {
 .legend-dot--fill {
   background: var(--surface-2);
   border: 1.5px solid var(--border);
+}
+
+.legend-dot--hot {
+  background: #EF4444;
+}
+
+.legend-dot--cold {
+  background: #378ADD;
 }
 
 @keyframes pop {
@@ -496,6 +542,57 @@ input {
 .personal-label-sub {
   font-size: 11px;
   color: var(--text-faint);
+}
+
+/* ---------- History mode toggle variant ---------- */
+
+.toggle--history {
+  background: #EF4444;
+}
+
+.toggle--history .toggle-thumb {
+  background: #fff;
+}
+
+/* ---------- Bias chips ---------- */
+
+.bias-chips {
+  display: flex;
+  gap: 6px;
+  padding-top: 10px;
+}
+
+.bias-chip {
+  flex: 1;
+  padding: 7px 4px;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  background: var(--surface-2);
+  color: var(--text-faint);
+  font-size: 12px;
+  font-weight: 600;
+  text-align: center;
+  cursor: pointer;
+  font-family: inherit;
+  transition: color 0.15s ease, border-color 0.15s ease, background 0.15s ease;
+}
+
+.bias-chip--hot.bias-chip--selected {
+  background: rgba(239, 68, 68, 0.12);
+  border-color: rgba(239, 68, 68, 0.5);
+  color: #EF4444;
+}
+
+.bias-chip--balanced.bias-chip--selected {
+  background: var(--accent-soft);
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.bias-chip--cold.bias-chip--selected {
+  background: rgba(55, 138, 221, 0.12);
+  border-color: rgba(55, 138, 221, 0.5);
+  color: #378ADD;
 }
 
 /* ---------- Toggle switch ---------- */
@@ -851,4 +948,182 @@ input {
   font-size: 12px;
   color: var(--text-dim);
   line-height: 1.55;
+}
+
+/* ---------- History sheet ---------- */
+
+.history-meta {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 4px 10px;
+  align-items: center;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 12px 14px;
+  margin-bottom: 16px;
+}
+
+.history-meta-left {
+  grid-column: 1;
+}
+
+.history-draw-count {
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--text);
+}
+
+.history-draw-unit {
+  font-size: 13px;
+  color: var(--text-faint);
+}
+
+.history-meta-range {
+  font-size: 12px;
+  color: var(--text-dim);
+  margin-top: 2px;
+}
+
+.history-meta-right {
+  grid-column: 2;
+  grid-row: 1 / 3;
+  align-self: center;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 4px;
+}
+
+.history-bundled-badge {
+  padding: 3px 8px;
+  border-radius: 20px;
+  background: rgba(29, 158, 117, 0.14);
+  border: 1px solid rgba(29, 158, 117, 0.3);
+  color: #1D9E75;
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.03em;
+  white-space: nowrap;
+}
+
+.history-updated-date {
+  font-size: 10px;
+  color: var(--text-faint);
+  white-space: nowrap;
+}
+
+.history-section-label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--text-faint);
+  margin: 0 0 8px;
+}
+
+.hsection-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  background: var(--text-faint);
+}
+
+.hsection-dot--hot { background: #EF4444; }
+.hsection-dot--cold { background: #378ADD; }
+
+.history-mini-balls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 16px;
+}
+
+.mini-ball {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.mini-ball--hot {
+  background: rgba(239, 68, 68, 0.12);
+  color: #EF4444;
+  border: 1.5px solid rgba(239, 68, 68, 0.4);
+}
+
+.mini-ball--cold {
+  background: rgba(55, 138, 221, 0.12);
+  color: #378ADD;
+  border: 1.5px solid rgba(55, 138, 221, 0.3);
+}
+
+.history-freq-list {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-bottom: 16px;
+}
+
+.history-freq-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.history-freq-num {
+  width: 24px;
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--text-dim);
+  text-align: right;
+  flex-shrink: 0;
+}
+
+.history-freq-bar-wrap {
+  flex: 1;
+  background: var(--surface-2);
+  border-radius: 4px;
+  height: 7px;
+  overflow: hidden;
+}
+
+.history-freq-bar {
+  height: 100%;
+  border-radius: 4px;
+  background: var(--accent-strong);
+  transition: width 0.3s ease;
+}
+
+.history-freq-bar--hot { background: #EF4444; }
+.history-freq-bar--cold { background: #378ADD; }
+
+.history-freq-count {
+  width: 28px;
+  font-size: 10px;
+  color: var(--text-faint);
+  flex-shrink: 0;
+  text-align: right;
+}
+
+.history-source-note {
+  font-size: 11px;
+  color: var(--text-faint);
+  line-height: 1.5;
+}
+
+.history-source-note code {
+  font-family: ui-monospace, 'SF Mono', Menlo, monospace;
+  font-size: 10px;
+  background: var(--surface-2);
+  padding: 1px 5px;
+  border-radius: 4px;
+  color: var(--accent);
 }
