@@ -39,15 +39,15 @@ describe('Ball', () => {
     expect(getByText('7')).not.toHaveClass('ball--fill')
   })
 
-  it('type="life-path" renders with amber inline background', () => {
+  it('type="life-path" renders with yellow inline background', () => {
     const { getByText } = render(<Ball value={7} min={1} max={42} type="life-path" />)
     // jsdom serialises hex colours as rgb() when reading back from .style
-    expect(getByText('7').style.background).toBe('rgb(239, 159, 39)') // #EF9F27
+    expect(getByText('7').style.background).toBe('rgb(240, 197, 42)') // #F0C52A
   })
 
-  it('type="expression" renders with teal inline background', () => {
+  it('type="expression" renders with green inline background', () => {
     const { getByText } = render(<Ball value={11} min={1} max={42} type="expression" />)
-    expect(getByText('11').style.background).toBe('rgb(29, 158, 117)') // #1D9E75
+    expect(getByText('11').style.background).toBe('rgb(22, 163, 74)') // #16A34A
   })
 
   it('type="personal" renders with purple inline background', () => {

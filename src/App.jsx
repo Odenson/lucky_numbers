@@ -145,39 +145,38 @@ export default function App() {
               )}
             </div>
 
-            {effectivePersonalMode && (
+            {(effectivePersonalMode || historyMode) && (
               <div className="personal-legend" aria-label="Colour key">
-                <span className="legend-item">
-                  <span className="legend-dot" style={{ background: '#EF9F27' }} />
-                  Life Path
-                </span>
-                <span className="legend-item">
-                  <span className="legend-dot" style={{ background: '#1D9E75' }} />
-                  Expression
-                </span>
-                <span className="legend-item">
-                  <span className="legend-dot" style={{ background: '#534AB7' }} />
-                  Personal
-                </span>
+                {effectivePersonalMode && (
+                  <>
+                    <span className="legend-item">
+                      <span className="legend-dot" style={{ background: '#F0C52A' }} />
+                      Life Path
+                    </span>
+                    <span className="legend-item">
+                      <span className="legend-dot" style={{ background: '#16A34A' }} />
+                      Expression
+                    </span>
+                    <span className="legend-item">
+                      <span className="legend-dot" style={{ background: '#534AB7' }} />
+                      Personal
+                    </span>
+                  </>
+                )}
+                {historyMode && (
+                  <>
+                    <span className="legend-item">
+                      <span className="legend-dot legend-dot--hot" />
+                      Hot
+                    </span>
+                    <span className="legend-item">
+                      <span className="legend-dot legend-dot--cold" />
+                      Cold
+                    </span>
+                  </>
+                )}
                 <span className="legend-item">
                   <span className="legend-dot legend-dot--fill" />
-                  Fill
-                </span>
-              </div>
-            )}
-
-            {historyMode && !effectivePersonalMode && (
-              <div className="personal-legend" aria-label="Colour key">
-                <span className="legend-item">
-                  <span className="legend-dot legend-dot--hot" />
-                  Hot
-                </span>
-                <span className="legend-item">
-                  <span className="legend-dot legend-dot--cold" />
-                  Cold
-                </span>
-                <span className="legend-item">
-                  <span className="legend-dot" style={{ background: 'var(--text-faint)' }} />
                   Neutral
                 </span>
               </div>
@@ -193,7 +192,7 @@ export default function App() {
                   label={lines.length > 1 ? `Line ${i + 1}` : 'Line'}
                   profile={profile}
                   personalMode={effectivePersonalMode}
-                  historyMode={historyMode && !effectivePersonalMode}
+                  historyMode={historyMode}
                   historyStats={historyStats}
                 />
               ))}

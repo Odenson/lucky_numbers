@@ -21,8 +21,8 @@ export function ballColor(value, min, max) {
 // Per-type colours used in personal mode.
 // 'fill' is intentionally absent — callers fall back to CSS (.ball--fill).
 const PERSONAL_TYPE_COLORS = {
-  'life-path':  ['#EF9F27', '#412402'],  // amber  — the key DOB number
-  'expression': ['#1D9E75', '#E1F5EE'],  // teal   — name-derived
+  'life-path':  ['#F0C52A', '#2C1A00'],  // yellow — the key DOB number
+  'expression': ['#16A34A', '#DCFCE7'],  // green  — name-derived
   'personal':   ['#534AB7', '#EEEDFE'],  // purple — remaining DOB pool
 }
 

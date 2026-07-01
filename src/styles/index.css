@@ -402,9 +402,9 @@ input {
 
 /* History mode ball types */
 .ball--hot {
-  background: rgba(239, 159, 39, 0.18);
-  color: #EF9F27;
-  box-shadow: inset 0 0 0 1.5px rgba(239, 159, 39, 0.45), 0 4px 10px -4px rgba(0, 0, 0, 0.15);
+  background: rgba(239, 68, 68, 0.15);
+  color: #EF4444;
+  box-shadow: inset 0 0 0 1.5px rgba(239, 68, 68, 0.45), 0 4px 10px -4px rgba(0, 0, 0, 0.15);
 }
 
 .ball--cold {
@@ -444,7 +444,7 @@ input {
 }
 
 .legend-dot--hot {
-  background: #EF9F27;
+  background: #EF4444;
 }
 
 .legend-dot--cold {
@@ -522,7 +522,7 @@ input {
 /* ---------- History mode toggle variant ---------- */
 
 .toggle--history {
-  background: #EF9F27;
+  background: #EF4444;
 }
 
 .toggle--history .toggle-thumb {
@@ -553,9 +553,9 @@ input {
 }
 
 .bias-chip--hot.bias-chip--selected {
-  background: rgba(239, 159, 39, 0.14);
-  border-color: rgba(239, 159, 39, 0.6);
-  color: #EF9F27;
+  background: rgba(239, 68, 68, 0.12);
+  border-color: rgba(239, 68, 68, 0.5);
+  color: #EF4444;
 }
 
 .bias-chip--balanced.bias-chip--selected {
@@ -1008,7 +1008,7 @@ input {
   background: var(--text-faint);
 }
 
-.hsection-dot--hot { background: #EF9F27; }
+.hsection-dot--hot { background: #EF4444; }
 .hsection-dot--cold { background: #378ADD; }
 
 .history-mini-balls {
@@ -1029,9 +1029,9 @@ input {
 }
 
 .mini-ball--hot {
-  background: rgba(239, 159, 39, 0.18);
-  color: #EF9F27;
-  border: 1.5px solid rgba(239, 159, 39, 0.4);
+  background: rgba(239, 68, 68, 0.12);
+  color: #EF4444;
+  border: 1.5px solid rgba(239, 68, 68, 0.4);
 }
 
 .mini-ball--cold {
@@ -1077,7 +1077,7 @@ input {
   transition: width 0.3s ease;
 }
 
-.history-freq-bar--hot { background: #EF9F27; }
+.history-freq-bar--hot { background: #EF4444; }
 .history-freq-bar--cold { background: #378ADD; }
 
 .history-freq-count {
