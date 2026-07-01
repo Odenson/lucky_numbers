@@ -1,123 +1,179 @@
 # Lucky Numbers
 
-A mobile-responsive web app that generates lucky numbers for lotto systems.
-Pick how many numbers you want, the range (e.g. 7 numbers between 1 and 42), and
-how many lines — then tap generate. Numbers are drawn at random with no repeats
-within a line.
+A mobile-responsive web app that generates lucky numbers for Australian lotto systems. Pick a game, configure your draw, and tap generate. Numbers are drawn with cryptographically-strong randomness with no repeats within a line.
 
-Personal mode blends **Pythagorean numerology** (derived from your name and date
-of birth) with a crypto-random fill, so your most meaningful numbers are always
-present while each draw stays fresh.
+Three generation modes stack on top of each other:
 
-Built with React + Vite. Dark/light themes, **Cosmic** visual style. Runs
-entirely in the browser — no backend or account needed.
+- **Stage 1 — random draw**: pure unbiased random selection
+- **Stage 2 — personal mode**: Pythagorean numerology (derived from your name and date of birth) blended with a random fill, so your most meaningful numbers are always present
+- **Stage 3 — historical weighting**: real draw history from the selected game weights the random selection toward hot (frequently drawn) or cold (overdue) numbers
+
+Built with **React 19 + Vite 8**. Dark/light themes, Cosmic visual style. Runs entirely in the browser — no backend, no account, no tracking.
 
 ## Prerequisites
 
-- **Node.js 18 or newer** (LTS 20+ recommended) — check with `node --version`
-- **npm 9 or newer** (ships with Node) — check with `npm --version`
+- **Node.js 22 or newer** — check with `node --version`
+- **npm 10 or newer** (ships with Node) — check with `npm --version`
 
-If you don't have Node, install it from [nodejs.org](https://nodejs.org) or via a
-version manager such as [nvm](https://github.com/nvm-sh/nvm).
+Install Node from [nodejs.org](https://nodejs.org) or via a version manager such as [nvm](https://github.com/nvm-sh/nvm).
 
 ## Install and run locally
 
 ```bash
-# 1. From the project root, install dependencies
+# 1. Install dependencies
 npm install
 
 # 2. Start the dev server with hot reload
 npm run dev
 ```
 
-Then open **http://localhost:5173** in your browser. The terminal prints the
-exact URL when the server starts. Stop the server with `Ctrl+C`.
+Open **http://localhost:5173**. Stop with `Ctrl+C`.
 
-For a mobile-like view, open your browser dev tools and toggle the device
-toolbar — the layout is built mobile-first.
+For a mobile-like view, open browser dev tools and toggle the device toolbar — the layout is built mobile-first.
 
-## Other scripts
+## Scripts
 
 ```bash
-npm run build        # production build into dist/
-npm run preview      # serve the production build locally to verify it
-npm test             # run the full test suite once (used in CI)
-npm run test:watch   # run tests in watch mode during development
-npm run test:coverage  # generate a coverage report in coverage/
+npm run dev              # dev server with HMR
+npm run build            # production build → dist/
+npm run preview          # serve the production build locally
+npm test                 # run the full test suite once (used in CI)
+npm run test:watch       # run tests in watch mode
+npm run test:coverage    # generate a coverage report in coverage/
+npm run fetch-history    # fetch real draw history and update src/data/ (see below)
 ```
 
-To deploy, run `npm run build` and host the static `dist/` folder on any static
-host (Netlify, Vercel, GitHub Pages, S3, etc.) — no server required.
+## Refreshing draw history
+
+Historical draw data is bundled at build time as JSON. To update it with the latest real results, run:
+
+```bash
+npm run fetch-history
+```
+
+This fetches the last 5 years of draws from [australia.national-lottery.com](https://australia.national-lottery.com) for all configured games and writes them to `src/data/`. Then rebuild the app.
+
+Options:
+
+```bash
+# Fetch a specific game or number of years
+npm run fetch-history -- --games tattslotto --years 3
+npm run fetch-history -- --games tattslotto,ozlotto --years 10
+
+# Preview what would be fetched without writing files
+npm run fetch-history -- --dry-run
+```
+
+Adding a new game requires one entry in [`scripts/lib/game-configs.js`](scripts/lib/game-configs.js) and a placeholder `src/data/{id}-history.json`.
 
 ## Features
 
-### Random draw
-- Configurable count, range (lowest/highest), and number of lines
-- Cryptographically-strong, unbiased random draw with no repeats per line
-- Generate several independent lines at once
-- Copy a line, share it (native share sheet where available), or copy all lines
-- Dark and light modes, remembered across visits
-- Settings persisted to `localStorage`
+### Game selection
+- **TattsLotto** — 6 numbers from 1–45, drawn Saturdays
+- **OZ Lotto** — 7 numbers from 1–47, drawn Tuesdays
+- Selecting a game auto-sets the number count, range, and draw history source
+- Settings are remembered across visits
 
-### Personal mode (Pythagorean numerology)
-- Enter your full name and date of birth via the profile panel (header icon)
-- The app derives your **Life Path**, **Expression Number**, **Birthday**, **Attitude**, and reduced component numbers using the Pythagorean system
-- Personal numbers within your configured range are always included in every line, in significance order
-- Remaining slots are filled with a fresh crypto-random draw each time
-- Each ball is colour-coded by its numerological source: amber (Life Path), teal (Expression), purple (other personal), ghost outline (random fill)
+### Random draw (Stage 1)
+- Configurable count, range (lowest/highest), and number of lines
+- Cryptographically-strong unbiased random draw — no repeats within a line
+- Copy a line, share it via native share sheet, or copy all lines at once
+- Dark and light modes, remembered across visits
+
+### Personal mode (Stage 2)
+- Enter your full name and date of birth via the profile panel (person icon in header)
+- Derives your **Life Path**, **Expression**, **Birthday**, **Attitude**, and reduced component numbers via the Pythagorean system
+- Personal numbers within your configured range are always included, in significance order; remaining slots are filled with crypto-random numbers
+- Ball colour coding: **yellow** (Life Path) · **green** (Expression) · **purple** (other personal) · ghost outline (random fill)
 - A legend below the results explains the colour coding
-- See [design/number-generation.md](design/number-generation.md) for full algorithm detail
+- Tap any ball to see its type in a tooltip
+
+### Historical weighting (Stage 3)
+- Toggle "Historical weighting" in the controls panel to activate
+- Choose a bias: **Hot** (favour frequently drawn numbers) · **Balanced** · **Cold** (favour overdue numbers)
+- Hot balls display in red, cold in blue, neutral in ghost outline
+- Tap the chart icon in the header to open the History panel — shows draw count, date range, hot/cold ball lists, and a full frequency chart for the configured range
+- Works independently or combined with personal mode (personal-typed balls keep their colour; fill slots promote to hot/cold where applicable)
+
+## Deployment
+
+Run `npm run build` and host the `dist/` folder on any static host — no server required.
+
+**GitHub Pages (this repo):**
+
+| Branch | URL | Purpose |
+|---|---|---|
+| `main` | `/lucky_numbers/` | Production |
+| `dev` | `/lucky_numbers/dev/` | Feature preview |
+
+CI runs on every push: tests must pass before a build is deployed.
 
 ## Project structure
 
 ```
-src/
-  App.jsx               app shell, wiring, generate flow
+scripts/
+  fetch-history.js          CLI entry point — fetch draw history
   lib/
-    generator.js        pure random generation + config validation
-    personal.js         Pythagorean numerology engine + personal line generation
-    palette.js          jewel-tone + personal-type ball colours
+    game-configs.js         per-game scraper config (URL, count, range)
+    scraper.js              HTTP fetch + cheerio HTML parser
+    output.js               format and write src/data/ JSON files
+
+src/
+  App.jsx                   app shell — state, routing, generate flow
+  data/
+    games.json              game registry (id, name, count, min, max)
+    tattslotto-history.json bundled TattsLotto draw history
+    ozlotto-history.json    bundled OZ Lotto draw history
+  lib/
+    generator.js            pure random generation + config validation
+    personal.js             Pythagorean numerology engine
+    history.js              frequency analysis, weighted generation (game-aware)
+    palette.js              ball colour system (jewel-tone + personal types)
+    random.js               crypto.getRandomValues wrapper
   hooks/
-    useLocalStorage.js  persisted state helper
-    useTheme.js         dark/light mode
+    useLocalStorage.js      persisted state helper
+    useTheme.js             dark/light mode
   components/
-    Controls.jsx        settings panel (with personal mode toggle)
-    Stepper.jsx         numeric +/- input (supports formatted display)
-    Ball.jsx            single number ball (type-aware colouring)
-    ResultLine.jsx      one line of balls with copy/share
-    ProfileSheet.jsx    modal for entering name and date of birth
+    Controls.jsx            settings panel (game selector, mode toggles, bias chips)
+    Stepper.jsx             numeric +/– input
+    Ball.jsx                single number ball (type-aware colour + hover tooltip)
+    ResultLine.jsx          one line of balls with copy/share
+    ProfileSheet.jsx        modal for name and date of birth
+    NumbersBreakdown.jsx    numerology breakdown detail sheet
+    HistorySheet.jsx        draw history stats modal (meta, hot/cold, frequency chart)
     ThemeToggle.jsx
-  styles/index.css      Cosmic theme (CSS variables, theming)
-design/
-  ui-spec.md            full UI specification
-  style-guide.md        visual design system and tokens
-  number-generation.md  number generation algorithm detail
+  styles/index.css          Cosmic theme (CSS variables, dark/light)
 ```
 
 ## Testing
 
-The test suite is written with **Vitest** and **React Testing Library** and covers all core library functions and the key UI components.
+Written with **Vitest** and **React Testing Library**.
 
 ```bash
 npm test
 ```
 
-87 tests across 5 files:
+195 tests across 10 files:
 
 | File | What is tested |
 |---|---|
 | `src/lib/generator.test.js` | `validateConfig`, `generateLine`, `generateLines` |
-| `src/lib/personal.test.js` | `calcExpressionNumber`, `buildPersonalPool`, `getPersonalNumberType`, `generatePersonalLine/Lines` |
+| `src/lib/personal.test.js` | Pythagorean engine, `buildPersonalPool`, `getPersonalNumberType`, line generation |
 | `src/lib/palette.test.js` | `ballColor`, `personalBallColor` |
-| `src/components/Ball.test.jsx` | Render, type-based colouring, fill ghost style |
-| `src/components/Stepper.test.jsx` | Buttons, disabled states, value clamping, `formatValue` |
+| `src/lib/history.test.js` | `computeFrequency`, hot/cold ranking, weighted generation (all bias modes) |
+| `src/components/Ball.test.jsx` | Render, type-based colouring, fill ghost style, animation delay |
+| `src/components/Stepper.test.jsx` | Buttons, disabled states, value clamping |
+| `src/components/Controls.test.jsx` | Game selector, personal toggle, history toggle, bias chips |
+| `src/components/ResultLine.test.jsx` | Ball rendering, copy/share actions |
+| `src/components/ProfileSheet.test.jsx` | Form fields, save/close |
+| `src/components/HistorySheet.test.jsx` | Meta display, hot/cold sections, frequency chart |
 
-Tests run automatically in CI (GitHub Actions) before every build. A failing test blocks deployment to both the production and dev preview environments.
+Tests run automatically in CI before every build. A failing test blocks deployment.
 
 ## Roadmap
 
-- **Stage 1 — random draw** ✓: unbiased crypto-random generation.
-- **Stage 2 — personal seeding** ✓: Pythagorean numerology blended with random fill; colour-coded ball types.
-- **Stage 3 — historical patterns**: read past lotto results to surface
-  most/least common numbers and periodic trends, and weight selection toward
-  them.
+- **Stage 1 — random draw** ✓
+- **Stage 2 — personal seeding** ✓
+- **Stage 3 — historical weighting** ✓
+- **Stage 4 — multi-game support + real-data scraper** ✓
+- **Stage 5** — automated weekly data refresh via GitHub Actions cron
