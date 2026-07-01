@@ -3,6 +3,7 @@ import {
   calcExpressionNumber,
   buildPersonalPool,
   getPersonalNumberType,
+  getPersonalSeed,
   generatePersonalLine,
   generatePersonalLines,
 } from './personal'
@@ -323,5 +324,81 @@ describe('generatePersonalLines', () => {
     for (const n of [7, 11, 14, 8, 5, 3]) {
       expect(line.numbers).toContain(n)
     }
+  })
+})
+
+// ─── generatePersonalLines — allVaried option ─────────────────────────────────
+
+describe('generatePersonalLines — allVaried', () => {
+  const opts = { count: 6, min: 1, max: 49, profile: PROFILE }
+  const PERSONAL_POOL = new Set([7, 11, 14, 8, 5, 3])
+
+  it('when allVaried=true, line 1 does NOT always contain the full personal pool', () => {
+    // Without allVaried, line 1 always has all 6 personal numbers.
+    // With allVaried, line 1 uses a random subset — so at least some runs
+    // should produce fewer than 6 personal numbers on line 1.
+    let someLineHasFewer = false
+    for (let i = 0; i < 30 && !someLineHasFewer; i++) {
+      const [line1] = generatePersonalLines(opts, 1, { allVaried: true })
+      const count = line1.numbers.filter((n) => PERSONAL_POOL.has(n)).length
+      if (count < PERSONAL_POOL.size) someLineHasFewer = true
+    }
+    expect(someLineHasFewer).toBe(true)
+  })
+
+  it('all lines with allVaried=true are still valid: count, range, no duplicates', () => {
+    const lines = generatePersonalLines(opts, 5, { allVaried: true })
+    for (const line of lines) {
+      expect(line.numbers).toHaveLength(6)
+      expect(new Set(line.numbers).size).toBe(6)
+      for (const n of line.numbers) {
+        expect(n).toBeGreaterThanOrEqual(1)
+        expect(n).toBeLessThanOrEqual(49)
+      }
+    }
+  })
+
+  it('allVaried=false (default) still gives line 1 the full pool', () => {
+    for (let i = 0; i < 5; i++) {
+      const [line1] = generatePersonalLines(opts, 3)
+      for (const n of [7, 11, 14, 8, 5, 3]) {
+        expect(line1.numbers).toContain(n)
+      }
+    }
+  })
+})
+
+// ─── getPersonalSeed ──────────────────────────────────────────────────────────
+
+describe('getPersonalSeed', () => {
+  it('returns all pool numbers that fall within [min, max]', () => {
+    // PROFILE pool: [7, 11, 14, 8, 5, 3] — all in [1, 45]
+    const seed = getPersonalSeed(PROFILE, 1, 45)
+    for (const n of [7, 11, 14, 8, 5, 3]) expect(seed).toContain(n)
+    expect(seed).toHaveLength(6)
+  })
+
+  it('excludes pool numbers outside the range', () => {
+    // Range 10–45: excludes 3, 5, 8 from pool
+    const seed = getPersonalSeed(PROFILE, 10, 45)
+    expect(seed).not.toContain(3)
+    expect(seed).not.toContain(5)
+    expect(seed).not.toContain(8)
+    expect(seed).toContain(11)
+    expect(seed).toContain(14)
+  })
+
+  it('returns an empty array when no pool numbers are in range', () => {
+    // Range 40–45: none of [7, 11, 14, 8, 5, 3] qualify
+    const seed = getPersonalSeed(PROFILE, 40, 45)
+    expect(seed).toHaveLength(0)
+  })
+
+  it('preserves the priority order of buildPersonalPool', () => {
+    const pool = buildPersonalPool(PROFILE)
+    const seed = getPersonalSeed(PROFILE, 1, 45)
+    // Seed must be the pool filtered — same relative order
+    const filtered = pool.filter((n) => n >= 1 && n <= 45)
+    expect(seed).toEqual(filtered)
   })
 })
