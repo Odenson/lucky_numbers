@@ -191,6 +191,55 @@ input {
   box-shadow: var(--shadow);
 }
 
+/* ---------- Game selector ---------- */
+
+.game-selector {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+
+.game-chip {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+  padding: 10px 14px;
+  border-radius: var(--radius-sm);
+  border: 1.5px solid var(--border);
+  background: var(--surface-2);
+  color: var(--text-dim);
+  cursor: pointer;
+  transition: border-color 0.15s, background 0.15s, color 0.15s;
+  text-align: left;
+}
+
+.game-chip:hover {
+  border-color: var(--accent);
+  color: var(--text);
+}
+
+.game-chip--selected {
+  border-color: var(--accent);
+  background: var(--accent-soft);
+  color: var(--text);
+}
+
+.game-chip-name {
+  font-size: 0.85rem;
+  font-weight: 700;
+  line-height: 1.1;
+}
+
+.game-chip-desc {
+  font-size: 0.65rem;
+  opacity: 0.75;
+  letter-spacing: 0.02em;
+}
+
+/* ---------- Number pickers ---------- */
+
 .controls-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;

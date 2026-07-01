@@ -15,12 +15,16 @@ import {
   getColdNumbers,
   generateWeightedLines,
 } from './lib/history'
+import GAMES from './data/games.json'
 
-const DEFAULT_CONFIG = { count: 7, min: 1, max: 42, lineCount: 1, allowRepeats: false }
+const GAME_MAP = Object.fromEntries(GAMES.map((g) => [g.id, g]))
+const DEFAULT_GAME_ID = GAMES[0].id
+const DEFAULT_CONFIG = { count: GAMES[0].count, min: GAMES[0].min, max: GAMES[0].max, lineCount: 1, allowRepeats: false }
 
 export default function App() {
   const { theme, toggle } = useTheme()
   const [config, setConfig] = useLocalStorage('ln:config', DEFAULT_CONFIG)
+  const [selectedGame, setSelectedGame] = useLocalStorage('ln:selectedGame', DEFAULT_GAME_ID)
   const [profile, setProfile] = useLocalStorage('ln:profile', null)
   const [personalMode, setPersonalMode] = useLocalStorage('ln:personalMode', false)
   const [historyMode, setHistoryMode] = useLocalStorage('ln:historyMode', false)
@@ -35,15 +39,22 @@ export default function App() {
 
   const error = useMemo(() => validateConfig(config), [config])
 
-  // Pre-compute hot/cold sets whenever history mode or range changes.
-  // Used for both generation routing and ball colouring in results.
+  const handleGameChange = (gameId) => {
+    const game = GAME_MAP[gameId]
+    if (!game) return
+    setSelectedGame(gameId)
+    setConfig((prev) => ({ ...prev, count: game.count, min: game.min, max: game.max }))
+    setLines([])
+  }
+
+  // Pre-compute hot/cold sets whenever history mode, game, or range changes.
   const historyStats = useMemo(() => {
     if (!historyMode) return null
-    const freq = computeFrequency(config.min, config.max)
+    const freq = computeFrequency(config.min, config.max, selectedGame)
     const hotSet = new Set(getHotNumbers(freq, 10))
     const coldSet = new Set(getColdNumbers(freq, 10))
     return { hotSet, coldSet }
-  }, [historyMode, config.min, config.max])
+  }, [historyMode, config.min, config.max, selectedGame])
 
   const generate = () => {
     if (error) return
@@ -51,7 +62,7 @@ export default function App() {
     if (effectivePersonalMode) {
       setLines(generatePersonalLines({ count, min, max, profile }, lineCount))
     } else if (historyMode) {
-      setLines(generateWeightedLines({ count, min, max, bias: historyBias }, lineCount))
+      setLines(generateWeightedLines({ count, min, max, bias: historyBias, gameId: selectedGame }, lineCount))
     } else {
       setLines(generateLines({ count, min, max, allowRepeats }, lineCount))
     }
@@ -66,11 +77,12 @@ export default function App() {
     }
   }
 
+  const gameLabel = GAME_MAP[selectedGame]?.name ?? selectedGame
   const footerMode = effectivePersonalMode
-    ? 'Stage 2 · personal mode'
+    ? `Stage 2 · personal mode · ${gameLabel}`
     : historyMode
-    ? `Stage 3 · ${historyBias} bias`
-    : 'Stage 1 · random draw'
+    ? `Stage 3 · ${historyBias} bias · ${gameLabel}`
+    : `Stage 1 · random draw · ${gameLabel}`
 
   return (
     <div className="app">
@@ -120,6 +132,8 @@ export default function App() {
           config={config}
           onChange={setConfig}
           error={error}
+          selectedGame={selectedGame}
+          onGameChange={handleGameChange}
           personalMode={effectivePersonalMode}
           onPersonalModeChange={setPersonalMode}
           profileComplete={profileComplete}
@@ -226,6 +240,7 @@ export default function App() {
         open={historyOpen}
         onClose={() => setHistoryOpen(false)}
         config={config}
+        gameId={selectedGame}
       />
     </div>
   )

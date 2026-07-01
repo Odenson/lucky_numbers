@@ -1,23 +1,44 @@
-import rawData from '../data/tatts-history.json'
+import tattslottoData from '../data/tattslotto-history.json'
+import ozlottoData from '../data/ozlotto-history.json'
 import { randomInt } from './random'
 
-export const META = {
-  game: rawData.meta.game,
-  updated: rawData.meta.updated,
-  drawCount: rawData.draws.length,
-  from: rawData.draws.at(-1)?.date ?? '',
-  to: rawData.draws[0]?.date ?? '',
+const GAME_DATA = {
+  tattslotto: tattslottoData,
+  ozlotto: ozlottoData,
 }
 
-// Module-level cache — draws are static, so this is safe.
+function rawFor(gameId = 'tattslotto') {
+  return GAME_DATA[gameId] ?? GAME_DATA.tattslotto
+}
+
+// Backwards-compatible export: tattslotto meta (used by HistorySheet default).
+export const META = buildMeta('tattslotto')
+
+export function getGameMeta(gameId = 'tattslotto') {
+  return buildMeta(gameId)
+}
+
+function buildMeta(gameId) {
+  const raw = rawFor(gameId)
+  return {
+    game: raw.meta.game,
+    updated: raw.meta.updated,
+    drawCount: raw.draws.length,
+    from: raw.draws.at(-1)?.date ?? '',
+    to: raw.draws[0]?.date ?? '',
+  }
+}
+
+// Module-level cache keyed by `gameId:min-max` — draws are static.
 const _freqCache = new Map()
 
-export function computeFrequency(min, max) {
-  const key = `${min}-${max}`
+export function computeFrequency(min, max, gameId = 'tattslotto') {
+  const key = `${gameId}:${min}-${max}`
   if (_freqCache.has(key)) return _freqCache.get(key)
+  const raw = rawFor(gameId)
   const freq = {}
   for (let n = min; n <= max; n++) freq[n] = 0
-  for (const draw of rawData.draws) {
+  for (const draw of raw.draws) {
     for (const n of draw.numbers) {
       if (n >= min && n <= max) freq[n]++
     }
@@ -40,7 +61,6 @@ export function getColdNumbers(freq, count = 10) {
     .map(([n]) => Number(n))
 }
 
-// Returns 'hot' | 'cold' | undefined for ball colouring in results.
 export function getHistoryNumberType(n, hotSet, coldSet) {
   if (hotSet.has(n)) return 'hot'
   if (coldSet.has(n)) return 'cold'
@@ -53,10 +73,10 @@ function buildWeightArray(pool, freq, bias) {
   const minF = Math.min(...values)
   const span = maxF - minF || 1
   return pool.map((n) => {
-    const norm = ((freq[n] ?? 0) - minF) / span // 0..1
+    const norm = ((freq[n] ?? 0) - minF) / span
     if (bias === 'hot') return 0.1 + 0.9 * norm
     if (bias === 'cold') return 0.1 + 0.9 * (1 - norm)
-    return 1 // balanced
+    return 1
   })
 }
 
@@ -81,17 +101,17 @@ function weightedSampleWithoutReplacement(pool, weights, count) {
   return selected
 }
 
-export function generateWeightedLine({ count, min, max, bias = 'hot', sorted = true }) {
-  const freq = computeFrequency(min, max)
+export function generateWeightedLine({ count, min, max, bias = 'hot', sorted = true, gameId = 'tattslotto' }) {
+  const freq = computeFrequency(min, max, gameId)
   const pool = Array.from({ length: max - min + 1 }, (_, i) => min + i)
   const weights = buildWeightArray(pool, freq, bias)
   const numbers = weightedSampleWithoutReplacement(pool, weights, count)
   return sorted ? numbers.sort((a, b) => a - b) : numbers
 }
 
-export function generateWeightedLines({ count, min, max, bias }, lineCount) {
+export function generateWeightedLines({ count, min, max, bias, gameId = 'tattslotto' }, lineCount) {
   return Array.from({ length: lineCount }, (_, i) => ({
     id: `h-${Date.now()}-${i}`,
-    numbers: generateWeightedLine({ count, min, max, bias }),
+    numbers: generateWeightedLine({ count, min, max, bias, gameId }),
   }))
 }

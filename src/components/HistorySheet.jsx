@@ -1,5 +1,5 @@
 import { useMemo } from 'react'
-import { META, computeFrequency, getHotNumbers, getColdNumbers } from '../lib/history'
+import { getGameMeta, computeFrequency, getHotNumbers, getColdNumbers } from '../lib/history'
 
 const MONTH_SHORT = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec']
 
@@ -15,10 +15,12 @@ function fmtUpdated(iso) {
   return `${MONTH_SHORT[m - 1]} ${y}`
 }
 
-export default function HistorySheet({ open, onClose, config }) {
+export default function HistorySheet({ open, onClose, config, gameId = 'tattslotto' }) {
+  const meta = useMemo(() => getGameMeta(gameId), [gameId])
+
   const freq = useMemo(
-    () => computeFrequency(config.min, config.max),
-    [config.min, config.max]
+    () => computeFrequency(config.min, config.max, gameId),
+    [config.min, config.max, gameId]
   )
 
   const hot = useMemo(() => new Set(getHotNumbers(freq, 10)), [freq])
@@ -54,15 +56,15 @@ export default function HistorySheet({ open, onClose, config }) {
         <div className="sheet-body">
           <div className="history-meta">
             <div className="history-meta-left">
-              <span className="history-draw-count">{META.drawCount.toLocaleString()}</span>
+              <span className="history-draw-count">{meta.drawCount.toLocaleString()}</span>
               <span className="history-draw-unit"> draws</span>
               <div className="history-meta-range">
-                {fmtDate(META.from)} – {fmtDate(META.to)} · {META.game}
+                {fmtDate(meta.from)} – {fmtDate(meta.to)} · {meta.game}
               </div>
             </div>
             <div className="history-meta-right">
               <span className="history-bundled-badge">✓ Bundled</span>
-              <span className="history-updated-date">Updated {fmtUpdated(META.updated)}</span>
+              <span className="history-updated-date">Updated {fmtUpdated(meta.updated)}</span>
             </div>
           </div>
 
@@ -108,7 +110,7 @@ export default function HistorySheet({ open, onClose, config }) {
           </div>
 
           <p className="history-source-note">
-            Data bundled from <code>src/data/tatts-history.json</code>. Update the file and rebuild to refresh.
+            Data bundled from <code>src/data/{gameId}-history.json</code>. Run <code>npm run fetch-history</code> and rebuild to refresh.
           </p>
         </div>
       </div>
