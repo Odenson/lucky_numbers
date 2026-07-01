@@ -1,11 +1,12 @@
 import { useState } from 'react'
 import Ball from './Ball'
 import { getPersonalNumberType } from '../lib/personal'
+import { getHistoryNumberType } from '../lib/history'
 
 // One generated line of balls with copy / share actions.
-// In personal mode, pass `profile` and `personalMode` to activate type-based
-// ball colouring.
-export default function ResultLine({ numbers, min, max, label, profile, personalMode }) {
+// Pass `personalMode` + `profile` for personal colouring, or
+// `historyMode` + `historyStats` ({ hotSet, coldSet }) for hot/cold colouring.
+export default function ResultLine({ numbers, min, max, label, profile, personalMode, historyMode, historyStats }) {
   const [copied, setCopied] = useState(false)
   const text = numbers.join(', ')
 
@@ -49,7 +50,13 @@ export default function ResultLine({ numbers, min, max, label, profile, personal
             min={min}
             max={max}
             index={i}
-            type={personalMode && profile ? getPersonalNumberType(n, profile) : undefined}
+            type={
+              personalMode && profile
+                ? getPersonalNumberType(n, profile)
+                : historyMode && historyStats
+                ? getHistoryNumberType(n, historyStats.hotSet, historyStats.coldSet)
+                : undefined
+            }
           />
         ))}
       </div>

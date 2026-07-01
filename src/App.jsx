@@ -4,10 +4,17 @@ import ResultLine from './components/ResultLine'
 import ThemeToggle from './components/ThemeToggle'
 import ProfileSheet from './components/ProfileSheet'
 import NumbersBreakdown from './components/NumbersBreakdown'
+import HistorySheet from './components/HistorySheet'
 import { useTheme } from './hooks/useTheme'
 import { useLocalStorage } from './hooks/useLocalStorage'
 import { generateLines, validateConfig } from './lib/generator'
 import { generatePersonalLines } from './lib/personal'
+import {
+  computeFrequency,
+  getHotNumbers,
+  getColdNumbers,
+  generateWeightedLines,
+} from './lib/history'
 
 const DEFAULT_CONFIG = { count: 7, min: 1, max: 42, lineCount: 1, allowRepeats: false }
 
@@ -16,21 +23,35 @@ export default function App() {
   const [config, setConfig] = useLocalStorage('ln:config', DEFAULT_CONFIG)
   const [profile, setProfile] = useLocalStorage('ln:profile', null)
   const [personalMode, setPersonalMode] = useLocalStorage('ln:personalMode', false)
+  const [historyMode, setHistoryMode] = useLocalStorage('ln:historyMode', false)
+  const [historyBias, setHistoryBias] = useLocalStorage('ln:historyBias', 'hot')
   const [profileOpen, setProfileOpen] = useState(false)
   const [breakdownOpen, setBreakdownOpen] = useState(false)
+  const [historyOpen, setHistoryOpen] = useState(false)
   const [lines, setLines] = useState([])
 
   const profileComplete = !!profile?.name?.trim()
-  // Auto-disable personal mode if the profile is removed or incomplete.
   const effectivePersonalMode = personalMode && profileComplete
 
   const error = useMemo(() => validateConfig(config), [config])
+
+  // Pre-compute hot/cold sets whenever history mode or range changes.
+  // Used for both generation routing and ball colouring in results.
+  const historyStats = useMemo(() => {
+    if (!historyMode) return null
+    const freq = computeFrequency(config.min, config.max)
+    const hotSet = new Set(getHotNumbers(freq, 10))
+    const coldSet = new Set(getColdNumbers(freq, 10))
+    return { hotSet, coldSet }
+  }, [historyMode, config.min, config.max])
 
   const generate = () => {
     if (error) return
     const { count, min, max, allowRepeats, lineCount } = config
     if (effectivePersonalMode) {
       setLines(generatePersonalLines({ count, min, max, profile }, lineCount))
+    } else if (historyMode) {
+      setLines(generateWeightedLines({ count, min, max, bias: historyBias }, lineCount))
     } else {
       setLines(generateLines({ count, min, max, allowRepeats }, lineCount))
     }
@@ -45,6 +66,12 @@ export default function App() {
     }
   }
 
+  const footerMode = effectivePersonalMode
+    ? 'Stage 2 · personal mode'
+    : historyMode
+    ? `Stage 3 · ${historyBias} bias`
+    : 'Stage 1 · random draw'
+
   return (
     <div className="app">
       <div className="aurora" aria-hidden="true" />
@@ -55,6 +82,15 @@ export default function App() {
           <h1>Lucky Numbers</h1>
         </div>
         <div className="header-actions">
+          <button
+            type="button"
+            className={`profile-btn profile-btn--always${historyMode ? ' profile-btn--active' : ''}`}
+            onClick={() => setHistoryOpen(true)}
+            aria-label="View historical draw data"
+            title="Lotto history"
+          >
+            <ChartIcon />
+          </button>
           {profileComplete && (
             <button
               type="button"
@@ -87,6 +123,10 @@ export default function App() {
           personalMode={effectivePersonalMode}
           onPersonalModeChange={setPersonalMode}
           profileComplete={profileComplete}
+          historyMode={historyMode}
+          onHistoryModeChange={setHistoryMode}
+          historyBias={historyBias}
+          onHistoryBiasChange={setHistoryBias}
         />
 
         <button type="button" className="generate-btn" onClick={generate} disabled={!!error}>
@@ -104,6 +144,7 @@ export default function App() {
                 </button>
               )}
             </div>
+
             {effectivePersonalMode && (
               <div className="personal-legend" aria-label="Colour key">
                 <span className="legend-item">
@@ -124,6 +165,24 @@ export default function App() {
                 </span>
               </div>
             )}
+
+            {historyMode && !effectivePersonalMode && (
+              <div className="personal-legend" aria-label="Colour key">
+                <span className="legend-item">
+                  <span className="legend-dot legend-dot--hot" />
+                  Hot
+                </span>
+                <span className="legend-item">
+                  <span className="legend-dot legend-dot--cold" />
+                  Cold
+                </span>
+                <span className="legend-item">
+                  <span className="legend-dot" style={{ background: 'var(--text-faint)' }} />
+                  Neutral
+                </span>
+              </div>
+            )}
+
             <ul className="results-list">
               {lines.map((line, i) => (
                 <ResultLine
@@ -134,6 +193,8 @@ export default function App() {
                   label={lines.length > 1 ? `Line ${i + 1}` : 'Line'}
                   profile={profile}
                   personalMode={effectivePersonalMode}
+                  historyMode={historyMode && !effectivePersonalMode}
+                  historyStats={historyStats}
                 />
               ))}
             </ul>
@@ -146,8 +207,7 @@ export default function App() {
       </main>
 
       <footer className="app-footer">
-        <span>{effectivePersonalMode ? 'Stage 2 · personal mode' : 'Stage 1 · random draw'}</span>
-        <span className="footer-soon">Pattern mode coming soon</span>
+        <span>{footerMode}</span>
       </footer>
 
       <ProfileSheet
@@ -162,6 +222,12 @@ export default function App() {
         profile={profile}
         onClose={() => setBreakdownOpen(false)}
       />
+
+      <HistorySheet
+        open={historyOpen}
+        onClose={() => setHistoryOpen(false)}
+        config={config}
+      />
     </div>
   )
 }
@@ -170,6 +236,17 @@ function SparkIcon() {
   return (
     <svg viewBox="0 0 24 24" width="22" height="22" fill="currentColor" aria-hidden="true">
       <path d="M12 2l1.8 6.2L20 10l-6.2 1.8L12 18l-1.8-6.2L4 10l6.2-1.8L12 2Z" />
+    </svg>
+  )
+}
+
+function ChartIcon() {
+  return (
+    <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <line x1="18" y1="20" x2="18" y2="10" />
+      <line x1="12" y1="20" x2="12" y2="4" />
+      <line x1="6"  y1="20" x2="6"  y2="14" />
+      <line x1="2"  y1="20" x2="22" y2="20" />
     </svg>
   )
 }

@@ -1,7 +1,25 @@
 import Stepper from './Stepper'
 
-// Configuration panel: how many numbers, the range, and how many lines.
-export default function Controls({ config, onChange, error, personalMode, onPersonalModeChange, profileComplete }) {
+const BIAS_OPTIONS = [
+  { value: 'hot',      label: '🔥 Hot' },
+  { value: 'balanced', label: '⚖ Balanced' },
+  { value: 'cold',     label: '❄ Cold' },
+]
+
+// Configuration panel: how many numbers, the range, how many lines,
+// and mode toggles (personal + historical weighting).
+export default function Controls({
+  config,
+  onChange,
+  error,
+  personalMode,
+  onPersonalModeChange,
+  profileComplete,
+  historyMode,
+  onHistoryModeChange,
+  historyBias,
+  onHistoryBiasChange,
+}) {
   const set = (patch) => onChange({ ...config, ...patch })
   const poolSize = config.max - config.min + 1
 
@@ -65,6 +83,39 @@ export default function Controls({ config, onChange, error, personalMode, onPers
           <span className="toggle-thumb" aria-hidden="true" />
         </button>
       </div>
+
+      <div className="personal-row">
+        <div className="personal-label">
+          <span className="personal-label-main">Historical weighting</span>
+          <span className="personal-label-sub">Bias draw toward hot or cold numbers</span>
+        </div>
+        <button
+          type="button"
+          role="switch"
+          aria-checked={historyMode}
+          className={`toggle${historyMode ? ' toggle--on toggle--history' : ''}`}
+          onClick={() => onHistoryModeChange(!historyMode)}
+          aria-label="Historical weighting"
+        >
+          <span className="toggle-thumb" aria-hidden="true" />
+        </button>
+      </div>
+
+      {historyMode && (
+        <div className="bias-chips" role="group" aria-label="Weighting bias">
+          {BIAS_OPTIONS.map(({ value, label }) => (
+            <button
+              key={value}
+              type="button"
+              className={`bias-chip bias-chip--${value}${historyBias === value ? ' bias-chip--selected' : ''}`}
+              onClick={() => onHistoryBiasChange(value)}
+              aria-pressed={historyBias === value}
+            >
+              {label}
+            </button>
+          ))}
+        </div>
+      )}
 
       {error && <p className="controls-error" role="alert">{error}</p>}
     </section>
