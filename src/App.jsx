@@ -8,12 +8,13 @@ import HistorySheet from './components/HistorySheet'
 import { useTheme } from './hooks/useTheme'
 import { useLocalStorage } from './hooks/useLocalStorage'
 import { generateLines, validateConfig } from './lib/generator'
-import { generatePersonalLines } from './lib/personal'
+import { generatePersonalLines, getPersonalSeed } from './lib/personal'
 import {
   computeFrequency,
   getHotNumbers,
   getColdNumbers,
   generateWeightedLines,
+  generatePinnedLine,
 } from './lib/history'
 import GAMES from './data/games.json'
 
@@ -59,13 +60,42 @@ export default function App() {
   const generate = () => {
     if (error) return
     const { count, min, max, allowRepeats, lineCount } = config
-    if (effectivePersonalMode) {
-      setLines(generatePersonalLines({ count, min, max, profile }, lineCount))
-    } else if (historyMode) {
-      setLines(generateWeightedLines({ count, min, max, bias: historyBias, gameId: selectedGame }, lineCount))
-    } else {
+
+    // Stage 1: neither mode active — pure random, no pinned line
+    if (!effectivePersonalMode && !historyMode) {
       setLines(generateLines({ count, min, max, allowRepeats }, lineCount))
+      return
     }
+
+    // Build the guaranteed first line
+    const personalSeed = effectivePersonalMode
+      ? getPersonalSeed(profile, min, max)
+      : []
+
+    const line1 = {
+      id: crypto.randomUUID(),
+      numbers: generatePinnedLine({
+        count,
+        min,
+        max,
+        personalSeed,
+        bias: historyMode ? historyBias : null,
+        historyStats: historyMode ? historyStats : null,
+        gameId: selectedGame,
+      }),
+    }
+
+    if (lineCount === 1) {
+      setLines([line1])
+      return
+    }
+
+    // Lines 2+: existing generation (all varied for personal mode)
+    const rest = effectivePersonalMode
+      ? generatePersonalLines({ count, min, max, profile }, lineCount - 1, { allVaried: true })
+      : generateWeightedLines({ count, min, max, bias: historyBias, gameId: selectedGame }, lineCount - 1)
+
+    setLines([line1, ...rest])
   }
 
   const copyAll = async () => {

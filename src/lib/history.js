@@ -1,6 +1,6 @@
 import tattslottoData from '../data/tattslotto-history.json'
 import ozlottoData from '../data/ozlotto-history.json'
-import { randomInt } from './random'
+import { randomInt, shuffle } from './random'
 
 const GAME_DATA = {
   tattslotto: tattslottoData,
@@ -65,6 +65,81 @@ export function getHistoryNumberType(n, hotSet, coldSet) {
   if (hotSet.has(n)) return 'hot'
   if (coldSet.has(n)) return 'cold'
   return undefined
+}
+
+// Numbers in the mid-frequency range — not in the hot or cold sets.
+export function getBalancedNumbers(freq, hotSet, coldSet) {
+  return Object.keys(freq).map(Number).filter((n) => !hotSet.has(n) && !coldSet.has(n))
+}
+
+/**
+ * Generate the deterministic first line based on active modes.
+ *
+ * personalSeed  – ordered personal numbers already in range (may be []).
+ * bias          – 'hot' | 'cold' | 'balanced' (ignored when historyStats is null).
+ * historyStats  – { hotSet, coldSet } or null (null → random fill for remaining slots).
+ *
+ * Fill rules for remaining slots after personal numbers are placed:
+ *   hot      → draw from hotSet
+ *   cold     → draw from coldSet
+ *   balanced → draw from mid-frequency numbers (neither hot nor cold)
+ *   no history → draw at random from remaining range
+ *
+ * If the chosen fill pool runs dry, remaining slots fall back to random from full range.
+ */
+export function generatePinnedLine({
+  count,
+  min,
+  max,
+  personalSeed = [],
+  bias = 'hot',
+  historyStats = null,
+  gameId = 'tattslotto',
+}) {
+  const usedSet = new Set(personalSeed.slice(0, count))
+  const result  = [...usedSet]
+  const needed  = count - result.length
+
+  if (needed > 0) {
+    let fillPool = []
+
+    if (historyStats) {
+      const { hotSet, coldSet } = historyStats
+      if (bias === 'hot') {
+        fillPool = [...hotSet].filter((n) => !usedSet.has(n) && n >= min && n <= max)
+      } else if (bias === 'cold') {
+        fillPool = [...coldSet].filter((n) => !usedSet.has(n) && n >= min && n <= max)
+      } else {
+        const freq = computeFrequency(min, max, gameId)
+        fillPool = getBalancedNumbers(freq, hotSet, coldSet).filter(
+          (n) => !usedSet.has(n) && n >= min && n <= max,
+        )
+      }
+    } else {
+      for (let n = min; n <= max; n++) {
+        if (!usedSet.has(n)) fillPool.push(n)
+      }
+    }
+
+    for (const n of shuffle([...fillPool]).slice(0, needed)) {
+      result.push(n)
+      usedSet.add(n)
+    }
+
+    // Fallback if fill pool was exhausted (e.g. all hot numbers already used by personal)
+    if (result.length < count) {
+      const fallback = []
+      for (let n = min; n <= max; n++) {
+        if (!usedSet.has(n)) fallback.push(n)
+      }
+      for (const n of shuffle(fallback)) {
+        if (result.length >= count) break
+        result.push(n)
+      }
+    }
+  }
+
+  return result.sort((a, b) => a - b)
 }
 
 function buildWeightArray(pool, freq, bias) {

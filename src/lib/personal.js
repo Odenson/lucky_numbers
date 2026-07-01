@@ -147,6 +147,14 @@ export function getPersonalNumberType(n, profile) {
 }
 
 /**
+ * Return the priority-ordered personal numbers that fall within [min, max].
+ * Used externally to seed the pinned first-line generator.
+ */
+export function getPersonalSeed(profile, min, max) {
+  return buildPersonalPool(profile).filter((n) => n >= min && n <= max)
+}
+
+/**
  * Generate several independent personal lines at once.
  *
  * Line 1 always receives the full in-range personal pool (priority order).
@@ -154,21 +162,17 @@ export function getPersonalNumberType(n, profile) {
  * same personal numbers (strictly fewer than the full set), with the
  * remaining slots filled by a fresh crypto-random draw. This ensures every
  * subsequent line is varied while still carrying some personal influence.
+ *
+ * Pass `{ allVaried: true }` as a third argument to make every line use the
+ * random-subset behaviour (used when line 1 is handled externally as a pinned line).
  */
-export function generatePersonalLines({ count, min, max, profile }, lineCount = 1) {
+export function generatePersonalLines({ count, min, max, profile }, lineCount = 1, { allVaried = false } = {}) {
   const pool    = buildPersonalPool(profile)
   const inRange = pool.filter((n) => n >= min && n <= max)
 
   return Array.from({ length: lineCount }, (_, i) => {
-    // Line 1 (i === 0): full priority-ordered personal seed — null triggers
-    // the default path inside generatePersonalLine.
-    // Lines 2+ (i > 0): a random subset of the in-range personal numbers,
-    // with a count of 0 to (inRange.length − 1) so the line always differs
-    // from line 1 in its personal number complement.
     let personalSeed = null
-    if (i > 0 && inRange.length > 0) {
-      // Always include at least 1 personal number so lines 2+ retain personal
-      // influence. A count of 0 would produce a purely random line.
+    if ((allVaried || i > 0) && inRange.length > 0) {
       const subsetCount = inRange.length <= 1 ? inRange.length : randomInt(1, inRange.length - 1)
       personalSeed = shuffle(inRange).slice(0, subsetCount)
     }
