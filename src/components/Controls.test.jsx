@@ -2,13 +2,15 @@ import { describe, it, expect, vi } from 'vitest'
 import { render, fireEvent } from '@testing-library/react'
 import Controls from './Controls'
 
-const DEFAULT_CONFIG = { count: 7, min: 1, max: 42, lineCount: 1, allowRepeats: false }
+const DEFAULT_CONFIG = { count: 6, min: 1, max: 45, lineCount: 1, allowRepeats: false }
 
 function renderControls(overrides = {}) {
   const props = {
     config: DEFAULT_CONFIG,
     onChange: vi.fn(),
     error: null,
+    selectedGame: 'tattslotto',
+    onGameChange: vi.fn(),
     personalMode: false,
     onPersonalModeChange: vi.fn(),
     profileComplete: false,
@@ -24,12 +26,12 @@ function renderControls(overrides = {}) {
 describe('Controls', () => {
   it('renders the summary text with count and range', () => {
     const { getByText } = renderControls()
-    expect(getByText(/7 numbers between 1 and 42/)).toBeInTheDocument()
+    expect(getByText(/6 numbers between 1 and 45/)).toBeInTheDocument()
   })
 
   it('shows pool size in the summary', () => {
     const { getByText } = renderControls()
-    expect(getByText(/42 in the pool/)).toBeInTheDocument()
+    expect(getByText(/45 in the pool/)).toBeInTheDocument()
   })
 
   it('includes line count in summary when more than 1', () => {
@@ -144,6 +146,32 @@ describe('Controls', () => {
     it('selected bias chip has pressed state', () => {
       const { getByRole } = renderControls({ historyMode: true, historyBias: 'balanced' })
       expect(getByRole('button', { name: /Balanced/i })).toHaveAttribute('aria-pressed', 'true')
+    })
+  })
+
+  describe('game selector', () => {
+    it('renders a game selector group', () => {
+      const { getByRole } = renderControls()
+      expect(getByRole('group', { name: 'Select lottery game' })).toBeInTheDocument()
+    })
+
+    it('renders a chip for each game', () => {
+      const { getByRole } = renderControls()
+      expect(getByRole('button', { name: /TattsLotto/i })).toBeInTheDocument()
+      expect(getByRole('button', { name: /OZ Lotto/i })).toBeInTheDocument()
+    })
+
+    it('selected game chip has pressed state', () => {
+      const { getByRole } = renderControls({ selectedGame: 'tattslotto' })
+      expect(getByRole('button', { name: /TattsLotto/i })).toHaveAttribute('aria-pressed', 'true')
+      expect(getByRole('button', { name: /OZ Lotto/i })).toHaveAttribute('aria-pressed', 'false')
+    })
+
+    it('clicking a game chip calls onGameChange', () => {
+      const onGameChange = vi.fn()
+      const { getByRole } = renderControls({ onGameChange })
+      fireEvent.click(getByRole('button', { name: /OZ Lotto/i }))
+      expect(onGameChange).toHaveBeenCalledWith('ozlotto')
     })
   })
 })

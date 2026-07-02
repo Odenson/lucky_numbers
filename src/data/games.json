@@ -1,0 +1,22 @@
+[
+  {
+    "id": "tattslotto",
+    "name": "TattsLotto",
+    "description": "6 from 45 · Saturdays",
+    "count": 6,
+    "min": 1,
+    "max": 45,
+    "supplementaryCount": 2,
+    "drawDay": "Saturday"
+  },
+  {
+    "id": "ozlotto",
+    "name": "OZ Lotto",
+    "description": "7 from 47 · Tuesdays",
+    "count": 7,
+    "min": 1,
+    "max": 47,
+    "supplementaryCount": 2,
+    "drawDay": "Tuesday"
+  }
+]

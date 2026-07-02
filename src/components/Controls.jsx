@@ -1,3 +1,4 @@
+import GAMES from '../data/games.json'
 import Stepper from './Stepper'
 
 const BIAS_OPTIONS = [
@@ -6,12 +7,12 @@ const BIAS_OPTIONS = [
   { value: 'cold',     label: '❄ Cold' },
 ]
 
-// Configuration panel: how many numbers, the range, how many lines,
-// and mode toggles (personal + historical weighting).
 export default function Controls({
   config,
   onChange,
   error,
+  selectedGame,
+  onGameChange,
   personalMode,
   onPersonalModeChange,
   profileComplete,
@@ -25,6 +26,22 @@ export default function Controls({
 
   return (
     <section className="controls" aria-label="Generator settings">
+
+      <div className="game-selector" role="group" aria-label="Select lottery game">
+        {GAMES.map((game) => (
+          <button
+            key={game.id}
+            type="button"
+            className={`game-chip${selectedGame === game.id ? ' game-chip--selected' : ''}`}
+            onClick={() => onGameChange(game.id)}
+            aria-pressed={selectedGame === game.id}
+          >
+            <span className="game-chip-name">{game.name}</span>
+            <span className="game-chip-desc">{game.description}</span>
+          </button>
+        ))}
+      </div>
+
       <div className="controls-grid">
         <Stepper
           label="Numbers"
