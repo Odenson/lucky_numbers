@@ -23,6 +23,20 @@ How lines are generated based on the active mode combination.
 
 If the chosen fill pool is exhausted (e.g. all hot numbers are already covered by personal numbers), remaining slots fall back to random from the full range.
 
+## Seasonal boost (overlay)
+
+The **🌿 Seasonal boost** toggle is a modifier that can be stacked on top of any History bias (Hot, Balanced, or Cold). It does not replace the bias — it adds extra weight to this quarter's seasonally hot numbers within it.
+
+**Seasonal set** = the top 10 numbers drawn most often in the current calendar quarter (Q1 Jan–Mar, Q2 Apr–Jun, Q3 Jul–Sep, Q4 Oct–Dec), computed by filtering the full draw history to that quarter across all years.
+
+| What changes when seasonal boost is on | |
+|---|---|
+| **Line 1** | Seasonal members of the bias fill pool are picked first (before non-seasonal members of that same pool) |
+| **Lines 2+** | Weights for seasonal numbers are doubled (`w × 2`) relative to their base frequency weight |
+| **Ball colour** | Balls that appear in the seasonal set are displayed in amber/orange regardless of their hot/cold status |
+| **Legend** | A Seasonal dot appears alongside the Hot/Cold dots |
+| **Footer** | Shows `{bias} + seasonal bias` (e.g. `hot + seasonal bias`) |
+
 ## Key source locations
 
 | Concern | File | Export |
@@ -33,6 +47,8 @@ If the chosen fill pool is exhausted (e.g. all hot numbers are already covered b
 | Lines 2+ history | `src/lib/history.js` | `generateWeightedLines` |
 | Hot / cold sets | `src/lib/history.js` | `getHotNumbers`, `getColdNumbers` |
 | Balanced set | `src/lib/history.js` | `getBalancedNumbers` |
+| Seasonal set + boost | `src/lib/history.js` | `getSeasonalNumbers`, `computeSeasonalFrequency`, `currentQuarter` |
+| Bias + boost state | `src/App.jsx` | `historyBias`, `seasonalBoost`, `historyStats.activeSets` |
 | Orchestration | `src/App.jsx` | `generate()` |
 
 ## Game registry

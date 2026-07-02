@@ -8,6 +8,7 @@ const base = process.env.DEPLOY_BASE ?? '/'
 export default defineConfig({
   plugins: [react()],
   base,
+  server: { port: Number(process.env.PORT) || 5173 },
   test: {
     globals: true,
     environment: 'jsdom',

@@ -109,9 +109,7 @@ export default function HistorySheet({ open, onClose, config, gameId = 'tattslot
             ))}
           </div>
 
-          <p className="history-source-note">
-            Data bundled from <code>src/data/{gameId}-history.json</code>. Run <code>npm run fetch-history</code> and rebuild to refresh.
-          </p>
+
         </div>
       </div>
     </div>

@@ -13,6 +13,8 @@ import {
   computeFrequency,
   getHotNumbers,
   getColdNumbers,
+  getSeasonalNumbers,
+  currentQuarter,
   generateWeightedLines,
   generatePinnedLine,
 } from './lib/history'
@@ -30,6 +32,7 @@ export default function App() {
   const [personalMode, setPersonalMode] = useLocalStorage('ln:personalMode', false)
   const [historyMode, setHistoryMode] = useLocalStorage('ln:historyMode', false)
   const [historyBias, setHistoryBias] = useLocalStorage('ln:historyBias', 'hot')
+  const [seasonalBoost, setSeasonalBoost] = useLocalStorage('ln:seasonalBoost', false)
   const [profileOpen, setProfileOpen] = useState(false)
   const [breakdownOpen, setBreakdownOpen] = useState(false)
   const [historyOpen, setHistoryOpen] = useState(false)
@@ -48,14 +51,18 @@ export default function App() {
     setLines([])
   }
 
-  // Pre-compute hot/cold sets whenever history mode, game, or range changes.
+  // Pre-compute frequency sets whenever history mode, game, range, or bias changes.
   const historyStats = useMemo(() => {
     if (!historyMode) return null
     const freq = computeFrequency(config.min, config.max, selectedGame)
     const hotSet = new Set(getHotNumbers(freq, 10))
     const coldSet = new Set(getColdNumbers(freq, 10))
-    return { hotSet, coldSet }
-  }, [historyMode, config.min, config.max, selectedGame])
+    const quarter = currentQuarter()
+    const seasonalSet = new Set(getSeasonalNumbers(config.min, config.max, selectedGame, quarter))
+    // activeSets: the type-set to highlight in ball colours when seasonal boost is on
+    const activeSets = seasonalBoost ? seasonalSet : null
+    return { hotSet, coldSet, seasonalSet, quarter, activeSets }
+  }, [historyMode, config.min, config.max, selectedGame, seasonalBoost])
 
   const generate = () => {
     if (error) return
@@ -82,6 +89,7 @@ export default function App() {
         bias: historyMode ? historyBias : null,
         historyStats: historyMode ? historyStats : null,
         gameId: selectedGame,
+        seasonalBoost: historyMode && seasonalBoost,
       }),
     }
 
@@ -93,7 +101,15 @@ export default function App() {
     // Lines 2+: existing generation (all varied for personal mode)
     const rest = effectivePersonalMode
       ? generatePersonalLines({ count, min, max, profile }, lineCount - 1, { allVaried: true })
-      : generateWeightedLines({ count, min, max, bias: historyBias, gameId: selectedGame }, lineCount - 1)
+      : generateWeightedLines(
+          {
+            count, min, max, bias: historyBias, gameId: selectedGame,
+            quarter: historyStats?.quarter ?? null,
+            seasonalBoost,
+            seasonalSet: historyStats?.seasonalSet ?? null,
+          },
+          lineCount - 1,
+        )
 
     setLines([line1, ...rest])
   }
@@ -108,10 +124,11 @@ export default function App() {
   }
 
   const gameLabel = GAME_MAP[selectedGame]?.name ?? selectedGame
+  const historyLabel = seasonalBoost ? `${historyBias} + seasonal` : historyBias
   const footerMode = effectivePersonalMode
     ? `Stage 2 · personal mode · ${gameLabel}`
     : historyMode
-    ? `Stage 3 · ${historyBias} bias · ${gameLabel}`
+    ? `Stage 3 · ${historyLabel} bias · ${gameLabel}`
     : `Stage 1 · random draw · ${gameLabel}`
 
   return (
@@ -171,6 +188,8 @@ export default function App() {
           onHistoryModeChange={setHistoryMode}
           historyBias={historyBias}
           onHistoryBiasChange={setHistoryBias}
+          seasonalBoost={seasonalBoost}
+          onSeasonalBoostChange={setSeasonalBoost}
         />
 
         <button type="button" className="generate-btn" onClick={generate} disabled={!!error}>
@@ -209,6 +228,12 @@ export default function App() {
                 )}
                 {historyMode && (
                   <>
+                    {seasonalBoost && (
+                      <span className="legend-item">
+                        <span className="legend-dot legend-dot--seasonal" />
+                        Seasonal
+                      </span>
+                    )}
                     <span className="legend-item">
                       <span className="legend-dot legend-dot--hot" />
                       Hot

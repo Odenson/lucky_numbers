@@ -47,6 +47,37 @@ export function computeFrequency(min, max, gameId = 'tattslotto') {
   return freq
 }
 
+// Cache keyed by `gameId:min-max:qN` — quarter is 0-3 (Q1=0 … Q4=3).
+const _seasonalCache = new Map()
+
+export function computeSeasonalFrequency(min, max, gameId = 'tattslotto', quarter) {
+  const key = `${gameId}:${min}-${max}:q${quarter}`
+  if (_seasonalCache.has(key)) return _seasonalCache.get(key)
+  const raw = rawFor(gameId)
+  const freq = {}
+  for (let n = min; n <= max; n++) freq[n] = 0
+  for (const draw of raw.draws) {
+    const month = new Date(draw.date + 'T00:00:00').getMonth() // 0-11
+    if (Math.floor(month / 3) !== quarter) continue
+    for (const n of draw.numbers) {
+      if (n >= min && n <= max) freq[n]++
+    }
+  }
+  _seasonalCache.set(key, freq)
+  return freq
+}
+
+/** Returns the top `count` numbers for the current calendar quarter. */
+export function getSeasonalNumbers(min, max, gameId = 'tattslotto', quarter, count = 10) {
+  const freq = computeSeasonalFrequency(min, max, gameId, quarter)
+  return getHotNumbers(freq, count)
+}
+
+/** 0-3 index of the current calendar quarter. */
+export function currentQuarter() {
+  return Math.floor(new Date().getMonth() / 3)
+}
+
 export function getHotNumbers(freq, count = 10) {
   return Object.entries(freq)
     .sort((a, b) => b[1] - a[1])
@@ -61,7 +92,8 @@ export function getColdNumbers(freq, count = 10) {
     .map(([n]) => Number(n))
 }
 
-export function getHistoryNumberType(n, hotSet, coldSet) {
+export function getHistoryNumberType(n, hotSet, coldSet, seasonalSet = null) {
+  if (seasonalSet?.has(n)) return 'seasonal'
   if (hotSet.has(n)) return 'hot'
   if (coldSet.has(n)) return 'cold'
   return undefined
@@ -77,7 +109,8 @@ export function getBalancedNumbers(freq, hotSet, coldSet) {
  *
  * personalSeed  – ordered personal numbers already in range (may be []).
  * bias          – 'hot' | 'cold' | 'balanced' (ignored when historyStats is null).
- * historyStats  – { hotSet, coldSet } or null (null → random fill for remaining slots).
+ * historyStats  – { hotSet, coldSet, seasonalSet, quarter } or null.
+ * seasonalBoost – when true, seasonal numbers in the fill pool are drawn first.
  *
  * Fill rules for remaining slots after personal numbers are placed:
  *   hot      → draw from hotSet
@@ -95,6 +128,7 @@ export function generatePinnedLine({
   bias = 'hot',
   historyStats = null,
   gameId = 'tattslotto',
+  seasonalBoost = false,
 }) {
   const usedSet = new Set(personalSeed.slice(0, count))
   const result  = [...usedSet]
@@ -104,7 +138,7 @@ export function generatePinnedLine({
     let fillPool = []
 
     if (historyStats) {
-      const { hotSet, coldSet } = historyStats
+      const { hotSet, coldSet, seasonalSet } = historyStats
       if (bias === 'hot') {
         fillPool = [...hotSet].filter((n) => !usedSet.has(n) && n >= min && n <= max)
       } else if (bias === 'cold') {
@@ -115,13 +149,23 @@ export function generatePinnedLine({
           (n) => !usedSet.has(n) && n >= min && n <= max,
         )
       }
+
+      // Seasonal boost: pick seasonal members of the fill pool first.
+      if (seasonalBoost && seasonalSet?.size) {
+        const seasonal = shuffle(fillPool.filter((n) => seasonalSet.has(n)))
+        const rest     = shuffle(fillPool.filter((n) => !seasonalSet.has(n)))
+        fillPool = [...seasonal, ...rest]
+      } else {
+        fillPool = shuffle(fillPool)
+      }
     } else {
       for (let n = min; n <= max; n++) {
         if (!usedSet.has(n)) fillPool.push(n)
       }
+      fillPool = shuffle(fillPool)
     }
 
-    for (const n of shuffle([...fillPool]).slice(0, needed)) {
+    for (const n of fillPool.slice(0, needed)) {
       result.push(n)
       usedSet.add(n)
     }
@@ -176,17 +220,28 @@ function weightedSampleWithoutReplacement(pool, weights, count) {
   return selected
 }
 
-export function generateWeightedLine({ count, min, max, bias = 'hot', sorted = true, gameId = 'tattslotto' }) {
+export function generateWeightedLine({
+  count, min, max, bias = 'hot', sorted = true,
+  gameId = 'tattslotto', quarter = null,
+  seasonalBoost = false, seasonalSet = null,
+}) {
   const freq = computeFrequency(min, max, gameId)
   const pool = Array.from({ length: max - min + 1 }, (_, i) => min + i)
-  const weights = buildWeightArray(pool, freq, bias)
+  let weights = buildWeightArray(pool, freq, bias)
+  // Seasonal boost: double the weight of this quarter's hot numbers.
+  if (seasonalBoost && seasonalSet?.size) {
+    weights = weights.map((w, i) => (seasonalSet.has(pool[i]) ? w * 2 : w))
+  }
   const numbers = weightedSampleWithoutReplacement(pool, weights, count)
   return sorted ? numbers.sort((a, b) => a - b) : numbers
 }
 
-export function generateWeightedLines({ count, min, max, bias, gameId = 'tattslotto' }, lineCount) {
+export function generateWeightedLines(
+  { count, min, max, bias, gameId = 'tattslotto', quarter = null, seasonalBoost = false, seasonalSet = null },
+  lineCount,
+) {
   return Array.from({ length: lineCount }, (_, i) => ({
     id: `h-${Date.now()}-${i}`,
-    numbers: generateWeightedLine({ count, min, max, bias, gameId }),
+    numbers: generateWeightedLine({ count, min, max, bias, gameId, quarter, seasonalBoost, seasonalSet }),
   }))
 }

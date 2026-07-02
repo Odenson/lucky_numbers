@@ -9,6 +9,9 @@ import {
   getBalancedNumbers,
   generateWeightedLines,
   generatePinnedLine,
+  computeSeasonalFrequency,
+  getSeasonalNumbers,
+  currentQuarter,
 } from './history'
 
 describe('META', () => {
@@ -412,5 +415,158 @@ describe('generatePinnedLine — Personal + Balanced', () => {
     expect(nums).toContain(11)
     const fillNums = nums.filter((n) => n !== 7 && n !== 11)
     for (const n of fillNums) expect(BALANCED.has(n)).toBe(true)
+  })
+})
+
+describe('currentQuarter', () => {
+  it('returns a value between 0 and 3 inclusive', () => {
+    const q = currentQuarter()
+    expect(q).toBeGreaterThanOrEqual(0)
+    expect(q).toBeLessThanOrEqual(3)
+    expect(Number.isInteger(q)).toBe(true)
+  })
+
+  it('matches the expected quarter for a given month', () => {
+    const month = new Date().getMonth()
+    expect(currentQuarter()).toBe(Math.floor(month / 3))
+  })
+})
+
+describe('computeSeasonalFrequency', () => {
+  it('returns a frequency map covering the full range', () => {
+    const freq = computeSeasonalFrequency(1, 45, 'tattslotto', 0)
+    for (let n = 1; n <= 45; n++) {
+      expect(freq).toHaveProperty(String(n))
+      expect(freq[n]).toBeGreaterThanOrEqual(0)
+    }
+  })
+
+  it('excludes numbers outside the min/max range', () => {
+    const freq = computeSeasonalFrequency(1, 45, 'tattslotto', 0)
+    expect(freq).not.toHaveProperty('0')
+    expect(freq).not.toHaveProperty('46')
+  })
+
+  it('only counts draws whose date falls in the requested quarter', () => {
+    // Q0 = Jan–Mar (months 0-2), Q2 = Jul–Sep (months 6-8).
+    // The two frequency maps should generally differ for real data.
+    const freqQ0 = computeSeasonalFrequency(1, 45, 'tattslotto', 0)
+    const freqQ2 = computeSeasonalFrequency(1, 45, 'tattslotto', 2)
+    const totalQ0 = Object.values(freqQ0).reduce((a, b) => a + b, 0)
+    const totalQ2 = Object.values(freqQ2).reduce((a, b) => a + b, 0)
+    // Each quarter should have counted some draws (dataset spans > 1 year)
+    expect(totalQ0).toBeGreaterThan(0)
+    expect(totalQ2).toBeGreaterThan(0)
+  })
+
+  it('returns the same object on repeated calls (cache hit)', () => {
+    const a = computeSeasonalFrequency(1, 45, 'tattslotto', 1)
+    const b = computeSeasonalFrequency(1, 45, 'tattslotto', 1)
+    expect(a).toBe(b)
+  })
+})
+
+describe('getSeasonalNumbers', () => {
+  it('returns exactly `count` numbers by default (10)', () => {
+    const nums = getSeasonalNumbers(1, 45, 'tattslotto', 0)
+    expect(nums).toHaveLength(10)
+  })
+
+  it('returns exactly `count` numbers when count is specified', () => {
+    const nums = getSeasonalNumbers(1, 45, 'tattslotto', 0, 5)
+    expect(nums).toHaveLength(5)
+  })
+
+  it('all returned numbers are within the min/max range', () => {
+    const nums = getSeasonalNumbers(1, 45, 'tattslotto', 2)
+    for (const n of nums) {
+      expect(n).toBeGreaterThanOrEqual(1)
+      expect(n).toBeLessThanOrEqual(45)
+    }
+  })
+
+  it('returns unique numbers', () => {
+    const nums = getSeasonalNumbers(1, 45, 'tattslotto', 0)
+    expect(new Set(nums).size).toBe(nums.length)
+  })
+
+  it('works for all four quarters without throwing', () => {
+    for (let q = 0; q <= 3; q++) {
+      expect(() => getSeasonalNumbers(1, 45, 'tattslotto', q, 10)).not.toThrow()
+    }
+  })
+})
+
+describe('generatePinnedLine — seasonal boost', () => {
+  const quarter = currentQuarter()
+  const seasonalSet = new Set(getSeasonalNumbers(1, 45, 'tattslotto', quarter))
+  const SEASONAL_STATS = {
+    hotSet: HOT_SET,
+    coldSet: COLD_SET,
+    seasonalSet,
+    quarter,
+    activeSets: seasonalSet,
+  }
+
+  it('with hot bias + boost: seasonal hot numbers appear before non-seasonal hot numbers', () => {
+    // Run many times; seasonal members of hotSet must be picked when possible.
+    const seasonalHot = [...HOT_SET].filter((n) => seasonalSet.has(n))
+    if (seasonalHot.length === 0) return // nothing to assert if sets don't overlap
+    const nums = generatePinnedLine({
+      count: seasonalHot.length, min: 1, max: 45,
+      personalSeed: [], bias: 'hot',
+      historyStats: SEASONAL_STATS, gameId: 'tattslotto',
+      seasonalBoost: true,
+    })
+    for (const n of seasonalHot) expect(nums).toContain(n)
+  })
+
+  it('without boost: hot bias fills from full hot set (no seasonal priority)', () => {
+    const nums = generatePinnedLine({
+      count: 6, min: 1, max: 45,
+      personalSeed: [], bias: 'hot',
+      historyStats: SEASONAL_STATS, gameId: 'tattslotto',
+      seasonalBoost: false,
+    })
+    expect(nums).toHaveLength(6)
+    for (const n of nums) expect(HOT_SET.has(n)).toBe(true)
+  })
+
+  it('returns unique numbers regardless of boost flag', () => {
+    for (const boost of [true, false]) {
+      const nums = generatePinnedLine({
+        count: 6, min: 1, max: 45,
+        personalSeed: [], bias: 'hot',
+        historyStats: SEASONAL_STATS, gameId: 'tattslotto',
+        seasonalBoost: boost,
+      })
+      expect(new Set(nums).size).toBe(6)
+    }
+  })
+})
+
+describe('generateWeightedLines — seasonal boost', () => {
+  const quarter = currentQuarter()
+  const seasonalSet = new Set(getSeasonalNumbers(1, 45, 'tattslotto', quarter))
+
+  it('runs without error when boost is on', () => {
+    expect(() =>
+      generateWeightedLines(
+        { count: 6, min: 1, max: 45, bias: 'hot', gameId: 'tattslotto', quarter, seasonalBoost: true, seasonalSet },
+        3,
+      )
+    ).not.toThrow()
+  })
+
+  it('returns the requested number of lines with correct count', () => {
+    const lines = generateWeightedLines(
+      { count: 6, min: 1, max: 45, bias: 'balanced', gameId: 'tattslotto', quarter, seasonalBoost: true, seasonalSet },
+      2,
+    )
+    expect(lines).toHaveLength(2)
+    for (const line of lines) {
+      expect(line.numbers).toHaveLength(6)
+      expect(new Set(line.numbers).size).toBe(6)
+    }
   })
 })

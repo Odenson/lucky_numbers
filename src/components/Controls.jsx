@@ -20,6 +20,8 @@ export default function Controls({
   onHistoryModeChange,
   historyBias,
   onHistoryBiasChange,
+  seasonalBoost,
+  onSeasonalBoostChange,
 }) {
   const set = (patch) => onChange({ ...config, ...patch })
   const poolSize = config.max - config.min + 1
@@ -119,19 +121,38 @@ export default function Controls({
       </div>
 
       {historyMode && (
-        <div className="bias-chips" role="group" aria-label="Weighting bias">
-          {BIAS_OPTIONS.map(({ value, label }) => (
+        <>
+          <div className="bias-chips" role="group" aria-label="Weighting bias">
+            {BIAS_OPTIONS.map(({ value, label }) => (
+              <button
+                key={value}
+                type="button"
+                className={`bias-chip bias-chip--${value}${historyBias === value ? ' bias-chip--selected' : ''}`}
+                onClick={() => onHistoryBiasChange(value)}
+                aria-pressed={historyBias === value}
+              >
+                {label}
+              </button>
+            ))}
+          </div>
+
+          <div className="personal-row personal-row--sub">
+            <div className="personal-label">
+              <span className="personal-label-main">🌿 Seasonal boost</span>
+              <span className="personal-label-sub">Extra weight on this quarter&apos;s hot numbers</span>
+            </div>
             <button
-              key={value}
               type="button"
-              className={`bias-chip bias-chip--${value}${historyBias === value ? ' bias-chip--selected' : ''}`}
-              onClick={() => onHistoryBiasChange(value)}
-              aria-pressed={historyBias === value}
+              role="switch"
+              aria-checked={seasonalBoost}
+              className={`toggle${seasonalBoost ? ' toggle--on toggle--seasonal' : ''}`}
+              onClick={() => onSeasonalBoostChange(!seasonalBoost)}
+              aria-label="Seasonal boost"
             >
-              {label}
+              <span className="toggle-thumb" aria-hidden="true" />
             </button>
-          ))}
-        </div>
+          </div>
+        </>
       )}
 
       {error && <p className="controls-error" role="alert">{error}</p>}
