@@ -1,17 +1,18 @@
 # Number Generation Logic
 
-This document describes how Lucky Numbers generates each line of numbers, covering both the standard random mode and the personal (numerology-driven) mode.
+This document describes how Lucky Numbers generates each line of numbers across all three active generation stages.
 
 ---
 
 ## Overview
 
-Number generation is implemented as pure functions in two files with no React or DOM dependencies. This keeps the logic independently testable and allows future strategies to be added by swapping the generation function without touching the UI.
+Number generation is implemented as pure functions with no React or DOM dependencies. This keeps the logic independently testable and allows future strategies to be added without touching the UI.
 
 | File | Purpose |
 |---|---|
 | `src/lib/generator.js` | Cryptographically-strong random generation + config validation |
 | `src/lib/personal.js` | Pythagorean numerology engine + personal line generation |
+| `src/lib/history.js` | Draw history frequency analysis + weighted/pinned generation |
 
 ---
 
@@ -219,19 +220,80 @@ In standard random mode (no personal profile), ball colours are assigned by valu
 
 ---
 
+## Stage 3 — Historical Weighting (`history.js`)
+
+Historical weighting uses real draw data bundled at build time (`src/data/{gameId}-history.json`) to bias number selection toward frequently drawn (hot), overdue (cold), or balanced numbers. An optional seasonal boost further weights this quarter's historically strong numbers.
+
+### Frequency analysis
+
+`computeFrequency(min, max, gameId)` iterates all draws in the bundled history and counts how many times each number in `[min, max]` has been drawn. The result is a plain object `{ [n]: count }`, cached in a module-level Map.
+
+`computeSeasonalFrequency(min, max, gameId, quarter)` does the same but only counts draws whose date falls in the specified calendar quarter (0 = Jan–Mar, 1 = Apr–Jun, 2 = Jul–Sep, 3 = Oct–Dec).
+
+### Sets derived from frequency
+
+| Export | Description |
+|---|---|
+| `getHotNumbers(freq, 10)` | Top 10 by frequency (descending) |
+| `getColdNumbers(freq, 10)` | Bottom 10 by frequency (ascending) |
+| `getBalancedNumbers(freq, hotSet, coldSet)` | All numbers in range that are neither hot nor cold |
+| `getSeasonalNumbers(min, max, gameId, quarter, 10)` | Top 10 for the given calendar quarter |
+
+### Line 1 — `generatePinnedLine(opts)`
+
+Generates the deterministic guaranteed first line. Personal numbers (if any) are placed first; remaining slots are filled from the bias pool.
+
+| `bias` | Fill pool |
+|---|---|
+| `'hot'` | `hotSet` |
+| `'cold'` | `coldSet` |
+| `'balanced'` | `getBalancedNumbers(...)` |
+
+With **`seasonalBoost: true`**: seasonal members of the fill pool are shuffled to the front and picked first. Non-seasonal pool members fill any remaining slots.
+
+If the fill pool is exhausted, remaining slots fall back to random from the full `[min, max]` range.
+
+### Lines 2+ — `generateWeightedLine(opts)` / `generateWeightedLines(opts, n)`
+
+Uses frequency-proportional weighted sampling without replacement across the full `[min, max]` pool.
+
+`buildWeightArray(pool, freq, bias)` normalises raw frequencies to `[0.1, 1.0]`:
+- `'hot'`: higher frequency → higher weight
+- `'cold'`: lower frequency → higher weight
+- `'balanced'`: uniform weight = 1
+
+With **`seasonalBoost: true`**: weights for any number in `seasonalSet` are multiplied by 2 after the base weight array is built, making seasonal numbers twice as likely to be selected.
+
+### Number type classification — `getHistoryNumberType(n, hotSet, coldSet, activeSets?)`
+
+| Return value | Condition |
+|---|---|
+| `'seasonal'` | `activeSets` is provided and `activeSets.has(n)` (takes priority) |
+| `'hot'` | `hotSet.has(n)` |
+| `'cold'` | `coldSet.has(n)` |
+| `undefined` | Number is neutral (not in any typed set) |
+
+`activeSets` is set to `seasonalSet` in App.jsx when `seasonalBoost` is on, or `null` otherwise.
+
+---
+
 ## Data flow
 
 ```
-User input (profile + config)
+User input (profile + config + bias + seasonalBoost)
+        │
+        ├── buildPersonalPool(profile)        ← Pythagorean derivation
+        │
+        ├── computeFrequency(min, max, gameId)  ← draw history
+        │   ├── getHotNumbers / getColdNumbers / getBalancedNumbers
+        │   └── computeSeasonalFrequency + getSeasonalNumbers
         │
         ▼
-  buildPersonalPool(profile)       ← Pythagorean derivation
+  generatePinnedLine(...)           ← Line 1 (deterministic)
+  generateWeightedLines(...)        ← Lines 2+ (weighted random)
         │
         ▼
-  generatePersonalLine / generateLine
-        │
-        ▼
-  getPersonalNumberType(n, profile) ← per-ball classification
+  getPersonalNumberType / getHistoryNumberType  ← per-ball classification
         │
         ▼
   Ball component  ←  personalBallColor(type) | ballColor(value, min, max)
@@ -241,5 +303,5 @@ User input (profile + config)
 
 ## Roadmap considerations
 
-- **Stage 3 — historical pattern weighting**: `generator.js` was designed so a new strategy function can replace the `pick` step without restructuring the UI. Historical data would pre-sort or weight the fill candidates before the random draw.
 - **Numerology expansion**: additional core numbers (Personality, Soul Urge) could be derived and added to the pool priority list without changing the `generatePersonalLine` algorithm.
+- **Stage 5 — automated data refresh**: weekly GitHub Actions cron to re-run `npm run fetch-history` and rebuild, keeping bundled history current without manual steps.

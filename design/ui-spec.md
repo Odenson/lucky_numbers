@@ -1,7 +1,7 @@
 # Lucky Numbers — UI Specification
 
-> Stage 1 · random draw  
-> Last updated: 2026-06-29
+> Stage 1–3 · random draw · personal mode · historical weighting  
+> Last updated: 2026-07-02
 
 This document describes every region, component, state, and interaction in the current UI. Use it as the reference baseline when planning or reviewing new builds.
 
@@ -39,24 +39,44 @@ Left side — horizontal flex, gap 10 px.
 | `SparkIcon` | 22 × 22 px filled SVG star, `color: var(--accent)` |
 | `<h1>` "Lucky Numbers" | 20 px, weight 600, `letter-spacing: -0.01em`, `color: var(--text)` |
 
-### 2.2 Theme toggle (`.theme-toggle`)
+### 2.2 Header action buttons (`.header-actions`)
 
-Right side — 40 × 40 px circular icon button.
+Right side — flex row, gap 8 px. Three icon buttons plus the theme toggle, all 40 × 40 px circles sharing the same base style as the theme toggle.
+
+| Button | Icon | Visible when | Active style |
+|---|---|---|---|
+| History | `ChartIcon` (bar chart) | Always | `background: var(--accent-soft)`, `color: var(--accent)` when `historyMode` is on |
+| Breakdown | `GridIcon` (2×2 grid) | Profile is complete | — |
+| Profile | `UserIcon` (person) | Always | `background: var(--accent-soft)`, `color: var(--accent)` when profile is complete |
+| Theme toggle | Sun / Moon | Always | `transform: rotate(-12deg)` on hover |
+
+### 2.3 Theme toggle (`.theme-toggle`)
+
+40 × 40 px circular icon button.
 
 | State | Style |
 |---|---|
 | Default | `background: var(--surface)`, `border: 1px solid var(--border)`, `color: var(--text-dim)` |
 | Hover | `color: var(--accent)`, `border-color: var(--accent)`, `transform: rotate(-12deg)` |
 
-- Renders a sun icon in dark mode and a moon icon in light mode.
-- Transition: `transform 0.2s ease`, `color 0.2s ease`, `border-color 0.2s ease`.
-- Persists choice to `localStorage` via `useTheme`.
+Persists choice to `localStorage` via `useTheme`.
 
 ---
 
 ## 3. Controls panel (`.controls`)
 
 Surfaced card: `background: var(--surface)`, 1 px border, `border-radius: var(--radius)`, `padding: 18px`, shadow.
+
+### 3.0 Game selector (`.game-selector`)
+
+Horizontal flex row of game chip buttons, `gap: 8px`, above the stepper grid. Each chip shows the game name and a short description (e.g. "6 from 45 · Saturdays").
+
+| State | Style |
+|---|---|
+| Default | `background: var(--surface-2)`, `border: 1px solid var(--border)` |
+| Selected (`.game-chip--selected`) | `background: var(--accent-soft)`, `border-color: var(--accent)` |
+
+Selecting a game updates `count`, `min`, and `max` in `config` to match the game's registry entry and clears the generated lines.
 
 ### 3.1 Stepper grid (`.controls-grid`)
 
@@ -108,6 +128,32 @@ Shown when `validateConfig` returns a string (e.g. count > pool size).
 - `role="alert"` for screen readers.
 - 13 px, `var(--danger)`, centred.
 - Pill background: `rgba(240,153,123,0.12)`, `border-radius: var(--radius-sm)`.
+
+### 3.5 Personal lucky numbers toggle (`.personal-row`)
+
+Below the stepper grid. Toggle row with label, sub-label, and a switch (`role="switch"`).
+
+| State | Detail |
+|---|---|
+| Profile incomplete | Row dimmed (`opacity: 0.5`), toggle disabled; sub-label "Add your profile to unlock" |
+| Profile complete, mode off | Sub-label "Based on your name & birth details"; toggle grey |
+| Profile complete, mode on | Toggle blue (`.toggle--on`) |
+
+### 3.6 Historical weighting toggle + bias chips
+
+Same toggle row layout as 3.5. Toggle accent colour: red (`.toggle--on.toggle--history`).
+
+Below the toggle, when `historyMode` is on:
+
+**Bias chips (`.bias-chips`)** — flex row of three pill buttons:
+
+| Chip | Value | Selected style |
+|---|---|---|
+| 🔥 Hot | `'hot'` | `.bias-chip--selected`: amber/red tint |
+| ⚖ Balanced | `'balanced'` | `.bias-chip--selected`: neutral tint |
+| ❄ Cold | `'cold'` | `.bias-chip--selected`: blue tint |
+
+**Seasonal boost row (`.personal-row.personal-row--sub`)** — below the bias chips, no top border. Toggle accent colour: amber/orange (`.toggle--on.toggle--seasonal`). Sub-label: "Extra weight on this quarter's hot numbers".
 
 ---
 
@@ -181,12 +227,32 @@ Both buttons share the same style: `padding: 7px 12px`, `border: 1px solid var(-
 |---|---|
 | Font | 16 px, weight 600 |
 | Shadow | `inset 0 -3px 8px rgba(0,0,0,0.25)`, `0 4px 10px -4px rgba(0,0,0,0.4)` |
-| Color | Determined by position in the configured range (see §6.1) |
+| Color | Determined by `type` prop (see §6.1) |
 | Animation | `pop` keyframe, 0.4 s `cubic-bezier(0.18,0.89,0.32,1.28)`, staggered by `index × 60 ms` |
+| Tooltip | `data-tooltip` shows the type label on hover when type is defined |
 
 ### 6.1 Ball colour mapping
 
-The ball's colour bucket is determined by `ballColor(value, min, max)`. The value is normalised to `[0, 1]` across the range, then mapped to one of six jewel-tone slots:
+Colour is determined by the `type` prop resolved in `ResultLine.resolveBallType`:
+
+**CSS-class types (ghost/tinted — no inline colour):**
+
+| Type | Class | Appearance |
+|---|---|---|
+| `'fill'` | `.ball--fill` | Ghost outline, no fill |
+| `'hot'` | `.ball--hot` | Red tint — `rgba(239,68,68,0.14)`, `color: #EF4444` |
+| `'cold'` | `.ball--cold` | Blue tint — `rgba(59,130,246,0.14)`, `color: #3B82F6` |
+| `'seasonal'` | `.ball--seasonal` | Amber tint — `rgba(249,115,22,0.14)`, `color: #F97316` |
+
+**Inline-colour types (personal jewel tones):**
+
+| Type | Background | Text |
+|---|---|---|
+| `'life-path'` | `#EF9F27` amber | `#412402` |
+| `'expression'` | `#1D9E75` teal | `#E1F5EE` |
+| `'personal'` | `#534AB7` purple | `#EEEDFE` |
+
+**Stage 1 (no type):** value is normalised to `[0, 1]` across `[min, max]` and mapped to one of six jewel-tone buckets via `ballColor(value, min, max)`:
 
 | Slot | Background | Text |
 |---|---|---|
@@ -197,9 +263,20 @@ The ball's colour bucket is determined by `ballColor(value, min, max)`. The valu
 | 4 | `#EF9F27` amber | `#412402` |
 | 5 (highest ~17 %) | `#D85A30` coral | `#FAECE7` |
 
-Ball colour is deterministic: the same number within the same configured range always gets the same colour bucket.
+**Type priority** (resolved in `resolveBallType`): personal types (`life-path`, `expression`, `personal`) always win. Fill slots in personal mode, or all slots in history-only mode, resolve to the history type (`hot`, `cold`, `seasonal`) or `'fill'` if neutral. Stage 1 (no mode) renders with range-based jewel tones.
 
-### 6.2 Pop animation
+### 6.2 Colour legend (`.personal-legend`)
+
+Shown below the results header whenever personal mode or history mode is active.
+
+| Condition | Legend dots shown |
+|---|---|
+| Personal mode on | Life Path (yellow) · Expression (teal) · Personal (purple) · Neutral (ghost) |
+| History mode on, seasonal boost off | Hot (red) · Cold (blue) · Neutral (ghost) |
+| History mode on, seasonal boost on | Seasonal (amber) · Hot (red) · Cold (blue) · Neutral (ghost) |
+| Both modes on | All applicable dots |
+
+### 6.3 Pop animation
 
 ```css
 @keyframes pop {
@@ -226,13 +303,16 @@ Set your numbers and range, then tap generate.
 
 ## 8. Footer (`.app-footer`)
 
-Space-between flex row. `margin-top: 28px`, `padding-top: 16px`, top border `1px solid var(--border)`. 12 px, `var(--text-faint)`.
+Centred flex row. `margin-top: 28px`, `padding-top: 16px`, top border `1px solid var(--border)`. 12 px, `var(--text-faint)`.
 
-| Left | Right |
+The footer label reflects the active generation mode:
+
+| Active mode | Footer text |
 |---|---|
-| `"Stage 1 · random draw"` | `"Personal & pattern modes coming soon"` (`.footer-soon`) |
-
-`.footer-soon` is hidden (`display: none`) at viewport widths ≤ 380 px.
+| Personal mode | `Stage 2 · personal mode · {Game name}` |
+| History mode | `Stage 3 · {bias} bias · {Game name}` |
+| History + seasonal boost | `Stage 3 · {bias} + seasonal bias · {Game name}` |
+| Neither | `Stage 1 · random draw · {Game name}` |
 
 ---
 
@@ -261,9 +341,15 @@ Space-between flex row. `margin-top: 28px`, `padding-top: 16px`, top border `1px
 ## 11. Data flow summary
 
 ```
-useLocalStorage('ln:config') ──► config state ──► Controls (reads + writes)
-                                                 ──► validateConfig ──► error
-                                                 ──► generate() ──► lines state ──► ResultLine[]
+useLocalStorage('ln:config')       ──► config state ──► Controls (reads + writes)
+useLocalStorage('ln:selectedGame') ──► selectedGame ──► game-aware history/generation
+useLocalStorage('ln:profile')      ──► profile ──► personal mode (Stage 2)
+useLocalStorage('ln:historyMode')  ──┐
+useLocalStorage('ln:historyBias')  ──┼► historyStats (useMemo) ──► hotSet, coldSet,
+useLocalStorage('ln:seasonalBoost')──┘                              seasonalSet, activeSets
+
+generate() ──► generatePinnedLine (Line 1) + generateWeightedLines / generatePersonalLines (2+)
+           ──► lines state ──► ResultLine[] ──► resolveBallType ──► Ball type + colour
 ```
 
-Config is the single source of truth. Generation is stateless: `generateLines` is pure.
+Config is the single source of truth. All generation functions are stateless pure functions.

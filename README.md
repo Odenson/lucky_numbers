@@ -6,7 +6,7 @@ Three generation modes stack on top of each other:
 
 - **Stage 1 — random draw**: pure unbiased random selection
 - **Stage 2 — personal mode**: Pythagorean numerology (derived from your name and date of birth) blended with a random fill, so your most meaningful numbers are always present
-- **Stage 3 — historical weighting**: real draw history from the selected game weights the random selection toward hot (frequently drawn) or cold (overdue) numbers
+- **Stage 3 — historical weighting**: real draw history from the selected game weights the random selection toward hot (frequently drawn), balanced, or cold (overdue) numbers — with an optional seasonal boost that adds extra weight to this quarter's historically strong numbers
 
 Built with **React 19 + Vite 8**. Dark/light themes, Cosmic visual style. Runs entirely in the browser — no backend, no account, no tracking.
 
@@ -91,9 +91,10 @@ Adding a new game requires one entry in [`scripts/lib/game-configs.js`](scripts/
 ### Historical weighting (Stage 3)
 - Toggle "Historical weighting" in the controls panel to activate
 - Choose a bias: **Hot** (favour frequently drawn numbers) · **Balanced** · **Cold** (favour overdue numbers)
-- Hot balls display in red, cold in blue, neutral in ghost outline
+- Optionally enable **🌿 Seasonal boost** — adds extra weight to this quarter's historically strong numbers on top of the chosen bias; seasonal balls display in amber/orange
+- Hot balls display in red, cold in blue, seasonal in amber/orange, neutral in ghost outline
 - Tap the chart icon in the header to open the History panel — shows draw count, date range, hot/cold ball lists, and a full frequency chart for the configured range
-- Works independently or combined with personal mode (personal-typed balls keep their colour; fill slots promote to hot/cold where applicable)
+- Works independently or combined with personal mode (personal-typed balls keep their colour; fill slots promote to hot/cold/seasonal where applicable)
 
 ## Deployment
 
@@ -115,7 +116,7 @@ scripts/
   fetch-history.js          CLI entry point — fetch draw history
   lib/
     game-configs.js         per-game scraper config (URL, count, range)
-    scraper.js              HTTP fetch + cheerio HTML parser
+    scraper.js              HTTP fetch + cheerio HTML parser (date parsed from href to avoid concatenation bug)
     output.js               format and write src/data/ JSON files
 
 src/
@@ -134,7 +135,7 @@ src/
     useLocalStorage.js      persisted state helper
     useTheme.js             dark/light mode
   components/
-    Controls.jsx            settings panel (game selector, mode toggles, bias chips)
+    Controls.jsx            settings panel (game selector, mode toggles, bias chips, seasonal boost toggle)
     Stepper.jsx             numeric +/– input
     Ball.jsx                single number ball (type-aware colour + hover tooltip)
     ResultLine.jsx          one line of balls with copy/share
@@ -153,14 +154,14 @@ Written with **Vitest** and **React Testing Library**.
 npm test
 ```
 
-195 tests across 10 files:
+245 tests across 10 files:
 
 | File | What is tested |
 |---|---|
 | `src/lib/generator.test.js` | `validateConfig`, `generateLine`, `generateLines` |
 | `src/lib/personal.test.js` | Pythagorean engine, `buildPersonalPool`, `getPersonalNumberType`, line generation |
 | `src/lib/palette.test.js` | `ballColor`, `personalBallColor` |
-| `src/lib/history.test.js` | `computeFrequency`, hot/cold ranking, weighted generation (all bias modes) |
+| `src/lib/history.test.js` | `computeFrequency`, hot/cold ranking, weighted generation, `generatePinnedLine` (all bias/mode combos), seasonal frequency and boost |
 | `src/components/Ball.test.jsx` | Render, type-based colouring, fill ghost style, animation delay |
 | `src/components/Stepper.test.jsx` | Buttons, disabled states, value clamping |
 | `src/components/Controls.test.jsx` | Game selector, personal toggle, history toggle, bias chips |

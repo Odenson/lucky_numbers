@@ -14,13 +14,13 @@ function resolveBallType(n, { personalMode, profile, historyMode, historyStats }
     if (pType !== 'fill') return pType
     // fill slot — promote to hot/cold if history is also on
     if (historyMode && historyStats) {
-      return getHistoryNumberType(n, historyStats.hotSet, historyStats.coldSet) ?? 'fill'
+      return getHistoryNumberType(n, historyStats.hotSet, historyStats.coldSet, historyStats.activeSets) ?? 'fill'
     }
     return 'fill'
   }
   if (historyMode && historyStats) {
     // neutral numbers become 'fill' (ghost), not random range colours
-    return getHistoryNumberType(n, historyStats.hotSet, historyStats.coldSet) ?? 'fill'
+    return getHistoryNumberType(n, historyStats.hotSet, historyStats.coldSet, historyStats.activeSets) ?? 'fill'
   }
   return undefined // Stage 1: range-based jewel colours
 }

@@ -1,7 +1,7 @@
 # Lucky Numbers — Style Guide
 
-> Stage 1 · random draw  
-> Last updated: 2026-06-29
+> Stage 1–3 · random draw · personal mode · historical weighting  
+> Last updated: 2026-07-02
 
 This guide captures every design decision in the current stylesheet. Reference it before touching `src/styles/index.css` or any component styles to keep the visual language consistent across builds.
 
@@ -200,7 +200,11 @@ All icons are inline SVGs. Rules:
 
 ## 7. Ball colour palette
 
-Six jewel-tone buckets, assigned by value position within the configured range. Colours are fixed — do not alter them without updating both the palette and this guide.
+Balls have two colouring modes: **inline** (background + text set directly) and **CSS-class-based** (tinted ghost styles). Never mix the two on the same ball.
+
+### 7.1 Stage 1 — range-based jewel tones (inline)
+
+Six buckets assigned by value position within `[min, max]`. Fixed — do not alter.
 
 | Slot | Background | Foreground | Tone |
 |---|---|---|---|
@@ -211,7 +215,37 @@ Six jewel-tone buckets, assigned by value position within the configured range. 
 | 4 | `#EF9F27` | `#412402` | Amber |
 | 5 | `#D85A30` | `#FAECE7` | Coral |
 
-Ball anatomy:
+### 7.2 Stage 2 — personal jewel tones (inline)
+
+| Type | Background | Foreground |
+|---|---|---|
+| `life-path` | `#EF9F27` amber | `#412402` |
+| `expression` | `#1D9E75` teal | `#E1F5EE` |
+| `personal` | `#534AB7` purple | `#EEEDFE` |
+
+### 7.3 Stage 3 — history / ghost types (CSS class)
+
+No inline background. Each class provides a tinted ghost look.
+
+| Type | Class | Colour |
+|---|---|---|
+| `fill` (neutral) | `.ball--fill` | Ghost outline only |
+| `hot` | `.ball--hot` | Red — `rgba(239,68,68,0.14)` fill, `#EF4444` text |
+| `cold` | `.ball--cold` | Blue — `rgba(59,130,246,0.14)` fill, `#3B82F6` text |
+| `seasonal` | `.ball--seasonal` | Amber — `rgba(249,115,22,0.14)` fill, `#F97316` text |
+
+### 7.4 Legend dots
+
+One dot per type, in the `.personal-legend` row. Use a 10 px circle (`.legend-dot`) with background matching the ball colour:
+
+| Class | Colour |
+|---|---|
+| `.legend-dot--hot` | `#EF4444` |
+| `.legend-dot--cold` | `#3B82F6` |
+| `.legend-dot--seasonal` | `#F97316` |
+| `.legend-dot--fill` | `var(--border)` |
+
+### 7.5 Ball anatomy
 
 ```css
 width: 44px;
@@ -222,7 +256,17 @@ font-weight: 600;
 box-shadow: inset 0 -3px 8px rgba(0,0,0,0.25), 0 4px 10px -4px rgba(0,0,0,0.4);
 ```
 
-The inset shadow gives a subtle 3-D depth effect. Keep it.
+The inset shadow gives a subtle 3-D depth effect. Keep it on all ball variants.
+
+### 7.6 Toggle variants
+
+The toggle base (`.toggle`) is grey when off. Add a modifier class when on for accent colour:
+
+| Modifier | Colour | Used for |
+|---|---|---|
+| `.toggle--on` | Blue (`var(--accent)`) | Personal mode |
+| `.toggle--on.toggle--history` | Red `#EF4444` | Historical weighting |
+| `.toggle--on.toggle--seasonal` | Amber `#F97316` | Seasonal boost |
 
 ---
 
@@ -305,4 +349,4 @@ Do not use other breakpoints without updating this guide.
 | Provide `prefers-reduced-motion` overrides | Add motion-only features |
 | Keep icon stroke weight at 1.8 | Mix stroke widths across icons |
 | Use `aria-label` on all icon-only buttons | Render interactive controls without accessible labels |
-| Extend the six ball colours sparingly | Add new ball colours outside the palette |
+| Use the defined ball type classes for new types | Hard-code new ball colours outside the palette |

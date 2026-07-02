@@ -6,6 +6,7 @@ const TYPE_LABELS = {
   'personal':   'Personal',
   'hot':        'Hot',
   'cold':       'Cold',
+  'seasonal':   'Seasonal',
   'fill':       'Neutral',
 }
 
@@ -16,13 +17,14 @@ const TYPE_LABELS = {
 //   'fill'                                   → ghost outline  (.ball--fill CSS)
 //   'hot'                                    → red ghost      (.ball--hot CSS)
 //   'cold'                                   → blue ghost     (.ball--cold CSS)
+//   'seasonal'                               → amber          (.ball--seasonal CSS)
 //   undefined (default)                      → range-based colour (inline)
 export default function Ball({ value, min, max, index = 0, type }) {
   const delay = { animationDelay: `${index * 60}ms` }
   const tooltip = TYPE_LABELS[type] ? { 'data-tooltip': TYPE_LABELS[type] } : {}
 
   // CSS-class-only types — no inline background needed
-  if (type === 'fill' || type === 'hot' || type === 'cold') {
+  if (type === 'fill' || type === 'hot' || type === 'cold' || type === 'seasonal') {
     return <span className={`ball ball--${type}`} style={delay} {...tooltip}>{value}</span>
   }
 

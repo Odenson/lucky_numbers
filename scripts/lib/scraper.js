@@ -61,7 +61,23 @@ export function parseArchivePage(html, config) {
 
     if (liNums.length < config.mainCount) return
 
-    const date = parseDate(container.text())
+    // Prefer the href on the nearest ancestor <a> — it contains the date in
+    // DD-MM-YYYY format and is unambiguous. Falling back to container.text()
+    // is unreliable because <br> produces no whitespace, causing cheerio to
+    // concatenate "Draw 4683" with "6 June" into "Draw 46836 June".
+    const anchor = $(el).closest('a[href]')
+    let date = null
+    if (anchor.length) {
+      const hm = (anchor.attr('href') || '').match(/(\d{2})-(\d{2})-(\d{4})$/)
+      if (hm) date = `${hm[3]}-${hm[2]}-${hm[1]}`
+    }
+    if (!date) {
+      // Fallback: strip the draw-number element then parse the remaining text
+      const dateText = anchor.length
+        ? anchor.clone().find('strong, b').remove().end().text().trim()
+        : container.text()
+      date = parseDate(dateText)
+    }
     if (!date) return
 
     seen.add(drawNum)
