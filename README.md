@@ -2,6 +2,8 @@
 
 A mobile-responsive web app that generates lucky numbers for Australian lotto systems. Pick a game, configure your draw, and tap generate. Numbers are drawn with cryptographically-strong randomness with no repeats within a line.
 
+![alt text](image.png)
+
 Three generation modes stack on top of each other:
 
 - **Stage 1 — random draw**: pure unbiased random selection
@@ -45,18 +47,36 @@ npm run fetch-history    # fetch real draw history and update src/data/ (see bel
 
 ## Refreshing draw history
 
-Historical draw data is bundled at build time as JSON. To update it with the latest real results, run:
+Historical draw data is bundled at build time as JSON. The easiest way to update it and deploy both environments in one step is the refresh script:
+
+```bash
+./scripts/refresh-deploy.sh
+```
+
+This runs the full pipeline automatically:
+
+1. Fetches the latest 5 years of draws for all games from [australia.national-lottery.com](https://australia.national-lottery.com)
+2. Exits early if nothing changed (no new draws since last run)
+3. Runs the full test suite — aborts if any test fails
+4. Commits only the updated data files with a dated message
+5. Pushes to `main` → triggers production deployment
+6. Force-pushes to `dev` → triggers dev preview deployment
+
+```bash
+# Fetch and test only — no commit or push
+./scripts/refresh-deploy.sh --dry-run
+```
+
+> **Note:** you must be on the `main` branch with no other uncommitted changes before running the script.
+
+### Manual fetch (data only, no deploy)
+
+If you only want to refresh the local data files without pushing:
 
 ```bash
 npm run fetch-history
-```
 
-This fetches the last 5 years of draws from [australia.national-lottery.com](https://australia.national-lottery.com) for all configured games and writes them to `src/data/`. Then rebuild the app.
-
-Options:
-
-```bash
-# Fetch a specific game or number of years
+# Specific game or year range
 npm run fetch-history -- --games tattslotto --years 3
 npm run fetch-history -- --games tattslotto,ozlotto --years 10
 
@@ -100,23 +120,38 @@ Adding a new game requires one entry in [`scripts/lib/game-configs.js`](scripts/
 
 Run `npm run build` and host the `dist/` folder on any static host — no server required.
 
+> The bundled draw history JSON is inlined into the JS file at build time — there is no separate data file to serve.
+
 **GitHub Pages (this repo):**
 
-| Branch | URL | Purpose |
-|---|---|---|
-| `main` | `/lucky_numbers/` | Production |
-| `dev` | `/lucky_numbers/dev/` | Feature preview |
+| Branch | URL | Trigger | Purpose |
+|---|---|---|---|
+| `main` | `https://odenson.github.io/lucky_numbers/` | Push to `main` | Production |
+| `dev` | `https://odenson.github.io/lucky_numbers/dev/` | Push to `dev` | Feature preview |
 
-CI runs on every push: tests must pass before a build is deployed.
+CI runs on every push via GitHub Actions: tests must pass before a build is deployed. A failing test blocks deployment to both environments.
+
+**Deploying a feature branch to dev:**
+
+```bash
+git push --force origin your-branch:dev
+```
+
+**Full history refresh + deploy to both environments:**
+
+```bash
+./scripts/refresh-deploy.sh
+```
 
 ## Project structure
 
 ```
 scripts/
-  fetch-history.js          CLI entry point — fetch draw history
+  refresh-deploy.sh         one-command history refresh + deploy to prod and dev
+  fetch-history.js          CLI entry point — fetch draw history only
   lib/
     game-configs.js         per-game scraper config (URL, count, range)
-    scraper.js              HTTP fetch + cheerio HTML parser (date parsed from href to avoid concatenation bug)
+    scraper.js              HTTP fetch + cheerio HTML parser (date from href)
     output.js               format and write src/data/ JSON files
 
 src/
@@ -139,11 +174,16 @@ src/
     Stepper.jsx             numeric +/– input
     Ball.jsx                single number ball (type-aware colour + hover tooltip)
     ResultLine.jsx          one line of balls with copy/share
+    AboutSheet.jsx          about modal — app summary and how-it-works guide
     ProfileSheet.jsx        modal for name and date of birth
     NumbersBreakdown.jsx    numerology breakdown detail sheet
     HistorySheet.jsx        draw history stats modal (meta, hot/cold, frequency chart)
     ThemeToggle.jsx
   styles/index.css          Cosmic theme (CSS variables, dark/light)
+
+.github/workflows/
+  deploy.yml                CI/CD — test + build + deploy to prod on push to main
+  deploy-dev.yml            CI/CD — test + build + deploy to dev preview on push to dev
 ```
 
 ## Testing
@@ -177,4 +217,5 @@ Tests run automatically in CI before every build. A failing test blocks deployme
 - **Stage 2 — personal seeding** ✓
 - **Stage 3 — historical weighting** ✓
 - **Stage 4 — multi-game support + real-data scraper** ✓
-- **Stage 5** — automated weekly data refresh via GitHub Actions cron
+- **Stage 5 — seasonal boost + one-command refresh script** ✓
+- **Stage 6** — automated weekly data refresh via GitHub Actions cron (no manual run required)

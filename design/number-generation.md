@@ -304,4 +304,4 @@ User input (profile + config + bias + seasonalBoost)
 ## Roadmap considerations
 
 - **Numerology expansion**: additional core numbers (Personality, Soul Urge) could be derived and added to the pool priority list without changing the `generatePersonalLine` algorithm.
-- **Stage 5 — automated data refresh**: weekly GitHub Actions cron to re-run `npm run fetch-history` and rebuild, keeping bundled history current without manual steps.
+- **Automated data refresh**: `scripts/refresh-deploy.sh` handles the full pipeline — fetch, test, commit, and push to both `main` (production) and `dev` (preview) in one command. A future Stage 6 would replace this with a weekly GitHub Actions cron so no manual run is required.
