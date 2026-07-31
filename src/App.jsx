@@ -5,6 +5,7 @@ import ThemeToggle from './components/ThemeToggle'
 import ProfileSheet from './components/ProfileSheet'
 import NumbersBreakdown from './components/NumbersBreakdown'
 import HistorySheet from './components/HistorySheet'
+import AboutSheet from './components/AboutSheet'
 import { useTheme } from './hooks/useTheme'
 import { useLocalStorage } from './hooks/useLocalStorage'
 import { generateLines, validateConfig } from './lib/generator'
@@ -36,6 +37,7 @@ export default function App() {
   const [profileOpen, setProfileOpen] = useState(false)
   const [breakdownOpen, setBreakdownOpen] = useState(false)
   const [historyOpen, setHistoryOpen] = useState(false)
+  const [aboutOpen, setAboutOpen] = useState(false)
   const [lines, setLines] = useState([])
 
   const profileComplete = !!profile?.name?.trim()
@@ -143,6 +145,15 @@ export default function App() {
         <div className="header-actions">
           <button
             type="button"
+            className="profile-btn profile-btn--always"
+            onClick={() => setAboutOpen(true)}
+            aria-label="About Lucky Numbers"
+            title="About"
+          >
+            <InfoIcon />
+          </button>
+          <button
+            type="button"
             className={`profile-btn profile-btn--always${historyMode ? ' profile-btn--active' : ''}`}
             onClick={() => setHistoryOpen(true)}
             aria-label="View historical draw data"
@@ -150,17 +161,15 @@ export default function App() {
           >
             <ChartIcon />
           </button>
-          {profileComplete && (
-            <button
-              type="button"
-              className="profile-btn"
-              onClick={() => setBreakdownOpen(true)}
-              aria-label="View your lucky numbers breakdown"
-              title="Your lucky numbers"
-            >
-              <GridIcon />
-            </button>
-          )}
+          <button
+            type="button"
+            className={`profile-btn${profileComplete ? ' profile-btn--active' : ''}`}
+            onClick={() => profileComplete ? setBreakdownOpen(true) : setProfileOpen(true)}
+            aria-label="View your lucky numbers breakdown"
+            title={profileComplete ? 'Your lucky numbers' : 'Set up your profile to unlock'}
+          >
+            <GridIcon />
+          </button>
           <button
             type="button"
             className={`profile-btn${profileComplete ? ' profile-btn--active' : ''}`}
@@ -276,6 +285,14 @@ export default function App() {
 
       <footer className="app-footer">
         <span>{footerMode}</span>
+        <a
+          href="https://github.com/Odenson"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="footer-credit"
+        >
+          Built by Odenson
+        </a>
       </footer>
 
       <ProfileSheet
@@ -297,7 +314,22 @@ export default function App() {
         config={config}
         gameId={selectedGame}
       />
+
+      <AboutSheet
+        open={aboutOpen}
+        onClose={() => setAboutOpen(false)}
+      />
     </div>
+  )
+}
+
+function InfoIcon() {
+  return (
+    <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <circle cx="12" cy="12" r="10" />
+      <line x1="12" y1="8" x2="12" y2="8.5" strokeWidth="2.2" strokeLinecap="round" />
+      <line x1="12" y1="12" x2="12" y2="16" />
+    </svg>
   )
 }
 
